@@ -1,0 +1,28 @@
+lib/
+├── main.dart                  # Entry point
+├── app.dart                   # App widget + theme + routing
+├── core/
+│   ├── constants/             # App-wide constants
+│   ├── utils/                 # Helper functions (date formatters, validators)
+│   ├── services/              # External services (Supabase client, storage, API)
+│   └── models/                # Data models (User, Post, Comment)
+├── features/                  # Split by feature
+│   ├── auth/
+│   │   ├── data/              # Supabase queries
+│   │   │   └── auth_service.dart
+│   │   ├── presentation/      # Screens + Widgets
+│   │   │   ├── login_screen.dart
+│   │   │   └── signup_screen.dart
+│   │   └── state/             # Riverpod/Provider state
+│   │       └── auth_controller.dart
+│   ├── posts/
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   └── state/
+│   └── comments/
+│       ├── data/
+│       ├── presentation/
+│       └── state/
+└── shared/
+    ├── widgets/               # Reusable widgets (buttons, cards)
+    └── theme/                 # Colors, typography
