@@ -30,7 +30,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       passwordController.text.trim(),
     );
 
-    // Only navigate if the widget is still mounted
+    // Only navigate if the widget is still mounted/rendered
     if (!mounted) return;
 
     if (user != null) {
@@ -43,7 +43,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -82,7 +81,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       authState.error.toString(),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Colors.black,
+                        color: Color.fromARGB(255, 194, 0, 0),
                         fontSize: 13,
                       ),
                     ),

@@ -8,6 +8,14 @@ class NavUserMenu extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // listen for auth state changes to navigate after logout
+    ref.listen<AsyncValue<User?>>(authControllerProvider, (previous, next) {
+      if (previous?.value != null && next.value == null) {
+        // user just logged out
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      }
+    });
+
     final authState = ref.watch(authControllerProvider);
 
     return authState.when(
@@ -40,12 +48,15 @@ class _LoggedInAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final isLoading = authState is AsyncLoading;
+
     return PopupMenuButton<String>(
       offset: const Offset(0, 45),
       onSelected: (value) {
         switch (value) {
           case 'profile':
-            Navigator.pushNamed(context, '/profile');
+            Navigator.pushNamed(context, '/profile_screen');
             break;
           case 'posts':
             Navigator.pushNamed(context, '/my-posts');
@@ -55,32 +66,6 @@ class _LoggedInAvatar extends ConsumerWidget {
             break;
         }
       },
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          CircleAvatar(
-            radius: 18,
-            backgroundColor: Colors.black,
-            child: Text(
-              user.email?.substring(0, 1).toUpperCase() ?? 'U',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
-          const Positioned(
-            bottom: -2,
-            right: -2,
-            child: CircleAvatar(
-              radius: 8,
-              backgroundColor: Colors.white,
-              child: Icon(
-                Icons.keyboard_arrow_down,
-                size: 12,
-                color: Colors.black,
-              ),
-            ),
-          ),
-        ],
-      ),
       itemBuilder: (context) => [
         const PopupMenuItem(
           value: 'profile',
@@ -95,7 +80,46 @@ class _LoggedInAvatar extends ConsumerWidget {
           child: Text('Logout'),
         ),
       ],
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        transitionBuilder: (child, animation) =>
+            RotationTransition(turns: animation, child: child),
+        child: isLoading
+            ? const SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : Stack(
+                key: const ValueKey('avatar'),
+                clipBehavior: Clip.none,
+                children: [
+                  CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.black,
+                    child: Text(
+                      user.email?.substring(0, 1).toUpperCase() ?? 'U',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                  const Positioned(
+                    bottom: -2,
+                    right: -2,
+                    child: CircleAvatar(
+                      radius: 8,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 12,
+                        color: Colors.black,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+      ),
     );
   }
 }
+
 

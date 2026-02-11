@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:blog_app/shared/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/home_screen.dart';
+import 'features/profiles/presentation/profile_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -25,11 +26,13 @@ class _AppView extends StatelessWidget {
       routes: {
         '/': (context) => const AuthWrapper(),
         '/login_screen': (context) => const LoginScreen(),
+        '/profile_screen': (context) => const ProfileScreen(),
       },
     );
   }
 }
 
+// initial view
 class AuthWrapper extends StatelessWidget {
   const AuthWrapper({super.key});
 
