@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:blog_app/shared/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
+import 'features/auth/presentation/register_screen.dart';
 import 'features/auth/presentation/home_screen.dart';
 import 'features/profiles/presentation/profile_screen.dart';
 
@@ -26,6 +27,7 @@ class _AppView extends StatelessWidget {
       routes: {
         '/': (context) => const AuthWrapper(),
         '/login_screen': (context) => const LoginScreen(),
+        '/register_screen': (context) => const RegisterScreen(),
         '/profile_screen': (context) => const ProfileScreen(),
       },
     );

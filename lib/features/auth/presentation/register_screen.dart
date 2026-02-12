@@ -3,14 +3,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/auth_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
 
-class LoginScreen extends ConsumerStatefulWidget {
-  const LoginScreen({super.key});
+class RegisterScreen extends ConsumerStatefulWidget {
+  const RegisterScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
@@ -25,18 +25,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     Navigator.pop(context);
   }
 
-  void login() async {
-    final user = await ref.read(authControllerProvider.notifier).login(
+  void register() async {
+    final user = await ref.read(authControllerProvider.notifier).register(
       emailController.text.trim(),
       passwordController.text.trim(),
     );
 
-    // Only navigate if the widget is still mounted
     if (!mounted) return;
 
     if (user != null) {
       Navigator.pop(context);
-      AppSnackBar.show( context, "Log in successful!", type: SnackType.success);
+      AppSnackBar.show( context, "Registration successful! Redirected to home screen.", type: SnackType.success);
     }
   } 
 
@@ -49,7 +48,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width: MediaQuery.of(context).size.width * 0.9, // 90% of screen width
+            width: MediaQuery.of(context).size.width * 0.9,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -68,7 +67,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   ),
                 ),
                 const Text(
-                  "Enter with focus and intent",
+                  "Begin your discipline",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 13,
@@ -134,7 +133,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 authState.isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
-                        onPressed: login,
+                        onPressed: register,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           shape: const RoundedRectangleBorder(
@@ -143,7 +142,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           padding: const EdgeInsets.symmetric(vertical: 14),
                         ),
                         child: const Text(
-                          "Enter",
+                          "Begin",
                           style: TextStyle(color: Colors.white),
                         ),
                       ),
@@ -154,7 +153,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      "Create account",
+                      "Login",
                       style: TextStyle(fontSize: 12),
                     ),
                     SizedBox(width: 8),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/state/auth_controller.dart';
+import '../../core/utils/app_snackbar.dart';
 
 class NavUserMenu extends ConsumerWidget {
   const NavUserMenu({super.key});
@@ -13,6 +14,7 @@ class NavUserMenu extends ConsumerWidget {
       if (previous?.value != null && next.value == null) {
         // user just logged out
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+        AppSnackBar.show( context, "Logged out successfully!", type: SnackType.success);
       }
     });
 
@@ -24,20 +26,56 @@ class NavUserMenu extends ConsumerWidget {
         height: 24,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (error, stackTrace) => const Icon(Icons.error),
+      error: (error, stackTrace) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.person_add),
+              onPressed: () {
+                Navigator.pushNamed(context, '/register_screen');
+              },
+            ),
+            const SizedBox(width: 4),
+            const Text("|", style: TextStyle(color: Colors.grey)),
+            const SizedBox(width: 4),
+            IconButton(
+              icon: const Icon(Icons.login),
+              onPressed: () {
+                Navigator.pushNamed(context, '/login_screen');
+              },
+            ),
+          ],
+        );
+      },
       data: (user) {
         if (user == null) {
-          return IconButton(
-            icon: const Icon(Icons.login),
-            onPressed: () {
-              Navigator.pushNamed(context, '/login_screen');
-            },
+          return Row(
+            mainAxisSize: MainAxisSize.min, // important for AppBar
+            children: [
+              IconButton(
+                icon: const Icon(Icons.person_add), // correct register icon
+                onPressed: () {
+                  Navigator.pushNamed(context, '/register_screen');
+                },
+              ),
+              const SizedBox(width: 4),
+              const Text("|", style: TextStyle(color: Colors.grey)),
+              const SizedBox(width: 4),
+              IconButton(
+                icon: const Icon(Icons.login),
+                onPressed: () {
+                  Navigator.pushNamed(context, '/login_screen');
+                },
+              ),
+            ],
           );
         }
 
         return _LoggedInAvatar(user: user);
       },
     );
+
   }
 }
 

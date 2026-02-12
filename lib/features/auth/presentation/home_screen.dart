@@ -108,6 +108,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                     child: ListView.builder(
                       itemCount: 5, // test only
                       itemBuilder: (context, index) {
+                        return null;
                         // return const ArticleCard();
                       },
                     ),

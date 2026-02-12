@@ -34,6 +34,24 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
+  Future<User?> register(String email, String password) async {
+    state = const AsyncValue.loading();
+    try {
+      final res = await _authService.signUp(
+        email: email,
+        password: password,
+      );
+      state = AsyncValue.data(res.user);
+      return res.user;
+    } on AuthException catch (e, st) {
+      state = AsyncValue.error(e.message, st);
+      return null;
+    } catch (e, st) {
+      state = AsyncValue.error('Something went wrong', st);
+      return null;
+    }
+  }
+
   void logout() async {
     state = const AsyncValue.loading();
     try {
