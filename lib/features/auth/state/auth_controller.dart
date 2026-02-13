@@ -16,39 +16,35 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
 
   AuthController(this._authService) : super(AsyncValue.data(_authService.currentUser));
 
-  Future<User?> login(String email, String password) async {
-    state = const AsyncValue.loading();
+   Future<User?> login(String email, String password) async {
     try {
       final res = await _authService.signIn(
         email: email,
         password: password,
       );
+
       state = AsyncValue.data(res.user);
       return res.user;
-    } on AuthException catch (e, st) {
-      state = AsyncValue.error(e.message, st);
-      return null;
-    } catch (e, st) {
-      state = AsyncValue.error('Something went wrong', st);
-      return null;
+    } on AuthException catch (e) {
+      throw e.message; // 🔥 throw instead of changing global state
+    } catch (e) {
+      throw 'Something went wrong';
     }
   }
 
   Future<User?> register(String email, String password) async {
-    state = const AsyncValue.loading();
     try {
       final res = await _authService.signUp(
         email: email,
         password: password,
       );
+
       state = AsyncValue.data(res.user);
       return res.user;
-    } on AuthException catch (e, st) {
-      state = AsyncValue.error(e.message, st);
-      return null;
-    } catch (e, st) {
-      state = AsyncValue.error('Something went wrong', st);
-      return null;
+    } on AuthException catch (e) {
+      throw e.message;
+    } catch (e) {
+      throw 'Something went wrong';
     }
   }
 

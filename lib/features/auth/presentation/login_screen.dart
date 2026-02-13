@@ -14,6 +14,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  bool isLoading = false;
+  String? errorMessage;
+
   @override
   void dispose() {
     emailController.dispose();
@@ -21,31 +24,42 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     super.dispose();
   }
 
-  void backToBlog() {
-    Navigator.pop(context);
+  void login() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final user = await ref
+          .read(authControllerProvider.notifier)
+          .login(emailController.text.trim(), passwordController.text.trim());
+
+      if (!mounted) return;
+
+      if (user != null) {
+        Navigator.pop(context);
+        AppSnackBar.show(context, "Log in successful!", type: SnackType.success);
+      }
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
   }
 
-  void login() async {
-    final user = await ref.read(authControllerProvider.notifier).login(
-      emailController.text.trim(),
-      passwordController.text.trim(),
-    );
-
-    // Only navigate if the widget is still mounted
-    if (!mounted) return;
-
-    if (user != null) {
-      Navigator.pop(context);
-      AppSnackBar.show( context, "Log in successful!", type: SnackType.success);
-    }
-  } 
 
   @override
   Widget build(BuildContext context) {
-    final authState = ref.watch(authControllerProvider);
 
     return Scaffold(
-      appBar: AppBar(),
+      appBar: AppBar(title: const Text('Login')),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -77,11 +91,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
                 const SizedBox(height: 24),
 
-                if (authState.hasError)
+                if (errorMessage != null)
                   Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Text(
-                      authState.error.toString(),
+                      errorMessage!,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Color.fromARGB(255, 194, 0, 0),
@@ -131,7 +145,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
                 const SizedBox(height: 20),
 
-                authState.isLoading
+                isLoading
                     ? const Center(child: CircularProgressIndicator())
                     : ElevatedButton(
                         onPressed: login,
@@ -153,15 +167,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      "Create account",
-                      style: TextStyle(fontSize: 12),
+                    GestureDetector(
+                      onTap: () => Navigator.pushReplacementNamed(context, '/register_screen'),
+                      child: Text(
+                        "Create account?",
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ),
                     SizedBox(width: 8),
                     Text("|", style: TextStyle(color: Colors.grey)),
                     SizedBox(width: 8),
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
                       child: const Text(
                         "Back to Blog",
                         style: TextStyle(fontSize: 12),
