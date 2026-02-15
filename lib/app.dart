@@ -1,3 +1,4 @@
+import 'package:blog_app/features/profiles/presentation/create_profile_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:blog_app/shared/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -29,6 +30,7 @@ class _AppView extends StatelessWidget {
         '/login_screen': (context) => const LoginScreen(),
         '/register_screen': (context) => const RegisterScreen(),
         '/profile_screen': (context) => const ProfileScreen(),
+        '/create_profile_screen': (context) => const CreateProfileScreen(),
       },
     );
   }

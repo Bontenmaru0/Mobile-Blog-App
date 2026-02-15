@@ -26,7 +26,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
       state = AsyncValue.data(res.user);
       return res.user;
     } on AuthException catch (e) {
-      throw e.message; // 🔥 throw instead of changing global state
+      throw e.message;
     } catch (e) {
       throw 'Something went wrong';
     }

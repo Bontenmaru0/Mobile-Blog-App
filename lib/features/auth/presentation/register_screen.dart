@@ -11,44 +11,78 @@ class RegisterScreen extends ConsumerStatefulWidget {
 }
 
 class _RegisterScreenState extends ConsumerState<RegisterScreen> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController verifyPasswordController = TextEditingController();
 
-  bool isLoading = false;
-  String? errorMessage;
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  bool isRegistering = false;
+  String? registrationErrorMessage;
+
+  bool get passwordsMatch {
+    final String passwordValue = passwordController.text;
+    final String verifyPasswordValue = verifyPasswordController.text;
+
+    if (passwordValue.isEmpty || verifyPasswordValue.isEmpty) {
+      return true;
+    }
+
+    return passwordValue == verifyPasswordValue;
+  }
+
+  bool get shouldShowPasswordMismatchError {
+    final String passwordValue = passwordController.text;
+    final String verifyPasswordValue = verifyPasswordController.text;
+
+    return passwordValue.isNotEmpty &&
+        verifyPasswordValue.isNotEmpty &&
+        passwordValue != verifyPasswordValue;
+  }
 
   @override
   void dispose() {
     emailController.dispose();
     passwordController.dispose();
+    verifyPasswordController.dispose();
     super.dispose();
   }
 
-  void register() async {
+  Future<void> registerUser() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+    
+    if (!passwordsMatch) return;
+
     setState(() {
-      isLoading = true;
-      errorMessage = null;
+      isRegistering = true;
+      registrationErrorMessage = null;
     });
 
     try {
-      final user = await ref
+      final registeredUser = await ref
           .read(authControllerProvider.notifier)
-          .register(emailController.text.trim(), passwordController.text.trim());
+          .register(
+            emailController.text.trim(),
+            passwordController.text.trim(),
+          );
 
       if (!mounted) return;
 
-      if (user != null) {
+      if (registeredUser != null) {
         Navigator.pop(context);
-        AppSnackBar.show(context, "Registration successful!", type: SnackType.success);
+
+        AppSnackBar.show( context, "Welcome aboard 👋", type: SnackType.success,);
       }
-    } catch (e) {
+    } catch (error) {
       setState(() {
-        errorMessage = e.toString();
+        registrationErrorMessage = error.toString();
       });
     } finally {
       if (mounted) {
         setState(() {
-          isLoading = false;
+          isRegistering = false;
         });
       }
     }
@@ -56,7 +90,6 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(title: const Text('Register')),
       body: Center(
@@ -69,123 +102,205 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
               border: Border.all(color: Colors.black),
               borderRadius: BorderRadius.zero,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  "Modern Samurai",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    "Modern Samurai",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w400,
+                    ),
                   ),
-                ),
-                const Text(
-                  "Begin your discipline",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: Colors.grey,
+                  const Text(
+                    "Begin your discipline",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 24),
+                  const SizedBox(height: 24),
 
-                if (errorMessage != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: Text(
-                      errorMessage!,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Color.fromARGB(255, 194, 0, 0),
-                        fontSize: 13,
+                  // password mismatch error
+                  if (shouldShowPasswordMismatchError)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        "Passwords do not match",
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.red,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+
+                  if (registrationErrorMessage != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Text(
+                        registrationErrorMessage!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          color: Color.fromARGB(255, 194, 0, 0),
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
+
+                  // email Field
+                  TextFormField(
+                    controller: emailController,
+                    onChanged: (_) => setState(() {}),
+                    validator: (String? emailValue) {
+                      if (emailValue == null || emailValue.trim().isEmpty) {
+                        return "Email is required";
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: "Email",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
                       ),
                     ),
                   ),
 
-                TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: "Email", 
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                      borderRadius: BorderRadius.zero,
+                  const SizedBox(height: 12),
+
+                  // password Field
+                  TextFormField(
+                    controller: passwordController,
+                    obscureText: true,
+                    onChanged: (_) => setState(() {}),
+                    validator: (String? passwordValue) {
+                      if (passwordValue == null || passwordValue.isEmpty) {
+                        return "Password is required";
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: "Password",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                TextField(
-                  controller: passwordController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
-                    labelText: "Password",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black),
-                      borderRadius: BorderRadius.zero,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: Colors.black, width: 2),
-                      borderRadius: BorderRadius.zero,
+                  // verify Password Field
+                  TextFormField(
+                    controller: verifyPasswordController,
+                    obscureText: true,
+                    onChanged: (_) => setState(() {}),
+                    validator: (String? verifyPasswordValue) {
+                      if (verifyPasswordValue == null || verifyPasswordValue.isEmpty) {
+                        return "Verify password is required";
+                      }
+
+                      if (verifyPasswordValue != passwordController.text) {
+                        return "Passwords do not match";
+                      }
+
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: "Verify Password",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
+                      ),
                     ),
                   ),
-                ),
 
-                const SizedBox(height: 20),
+                  const SizedBox(height: 20),
 
-                isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: register,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.black,
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.zero,
+                  // button
+                  ElevatedButton(
+                    onPressed: isRegistering || !passwordsMatch
+                        ? null
+                        : registerUser,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
+                      ),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: isRegistering
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Begin",
+                            style:
+                                TextStyle(color: Colors.white),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                        ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // links
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.pushReplacementNamed(
+                            context, '/login_screen'),
                         child: const Text(
-                          "Begin",
-                          style: TextStyle(color: Colors.white),
+                          "Already have an account?",
+                          style: TextStyle(fontSize: 12),
                         ),
                       ),
-
-                const SizedBox(height: 24),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    GestureDetector(
-                      onTap: () => Navigator.pushReplacementNamed(context, '/login_screen'),
-                      child: const Text(
-                        "Already have an account?",
-                        style: TextStyle(fontSize: 12),
+                      const SizedBox(width: 8),
+                      const Text("|", style: TextStyle(color: Colors.grey)),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => Navigator.pushNamedAndRemoveUntil(
+                            context, '/', (route) => false),
+                        child: const Text(
+                          "Back to Blog",
+                          style: TextStyle(fontSize: 12),
+                        ),
                       ),
-                    ),
-                    SizedBox(width: 8),
-                    Text("|", style: TextStyle(color: Colors.grey)),
-                    SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false),
-                      child: const Text(
-                        "Back to Blog",
-                        style: TextStyle(fontSize: 12),
-                      ),
-                    ),
-                  ],
-                )
-              ],
+                    ],
+                  )
+                ],
+              ),
             ),
           ),
         ),
