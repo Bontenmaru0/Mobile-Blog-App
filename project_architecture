@@ -15,13 +15,15 @@ lib/
 │   │   │   └── signup_screen.dart
 │   │   └── state/             # Riverpod/Provider state
 │   │       └── auth_controller.dart
-│   ├── posts/
+│   ├── blogs/
 │   │   ├── data/
 │   │   ├── presentation/
+│   │   │   └── widgets/
 │   │   └── state/
 │   └── comments/
 │       ├── data/
 │       ├── presentation/
+│       │   └── widgets/
 │       └── state/
 └── shared/
     ├── widgets/               # Reusable widgets (buttons, cards)

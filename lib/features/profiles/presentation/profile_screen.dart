@@ -181,7 +181,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   indicatorColor: Colors.black,
                   tabs: const [
                     Tab(text: "Posts"),
-                    Tab(text: "About"),
+                    // Tab(text: "About"),
                     Tab(text: "Activity"),
                   ],
                 ),
@@ -191,7 +191,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     controller: _tabController,
                     children: [
                       _buildPosts(),
-                      _buildAbout(),
+                      // _buildAbout(),
                       _buildActivity(),
                     ],
                   ),
@@ -220,14 +220,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     );
   }
 
-  Widget _buildAbout() {
-    return const Center(
-      child: Text(
-        "About the Ronin...",
-        style: TextStyle(color: Colors.black),
-      ),
-    );
-  }
+  // Widget _buildAbout() {
+  //   return const Center(
+  //     child: Text(
+  //       "About the Ronin...",
+  //       style: TextStyle(color: Colors.black),
+  //     ),
+  //   );
+  // }
 
   Widget _buildActivity() {
     return const Center(

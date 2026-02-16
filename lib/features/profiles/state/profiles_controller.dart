@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/profiles_service.dart';
 import '../../../core/models/profile_model.dart';
@@ -16,8 +17,8 @@ class ProfilesController extends AsyncNotifier<Profile?> {
   late ProfilesService _service;
 
   @override
-    //fetch profile on app start
-    Future<Profile?> build() async {
+  // fetch profile on app start
+  Future<Profile?> build() async {
     final authState = ref.watch(authControllerProvider);
     final user = authState.asData?.value;
 
@@ -27,22 +28,22 @@ class ProfilesController extends AsyncNotifier<Profile?> {
 
     try {
       final data = await _service.fetchProfile();
-      if (data == null || data.isEmpty) return null;
+      if (data.isEmpty) return null;
 
       return Profile.fromJson(data.first);
     } catch (e) {
-      // Just log the error, but return null so HomeScreen behaves normally
-      // print('ProfilesController build error: $e\n$st');
+      // print('ProfilesController build error: $e');
       return null;
     }
   }
-
 
   // create
   Future<void> createProfile({
     required String id,
     required String fullName,
+    required String nickName,
     required String bio,
+    File? avatarFile,
   }) async {
     state = const AsyncLoading();
 
@@ -50,8 +51,13 @@ class ProfilesController extends AsyncNotifier<Profile?> {
       final data = await _service.createProfile(
         id: id,
         fullName: fullName,
+        nickname: nickName,
         bio: bio,
+        avatarFile: avatarFile,
       );
+
+      print("DATA FROM SERVICE: $data");
+      print("TYPE: ${data.runtimeType}");
 
       return Profile.fromJson(data);
     });
@@ -61,7 +67,9 @@ class ProfilesController extends AsyncNotifier<Profile?> {
   Future<void> updateProfile({
     required String id,
     required String fullName,
+    required String nickname,
     required String bio,
+    File? avatarFile,
   }) async {
     state = const AsyncLoading();
 
@@ -69,7 +77,9 @@ class ProfilesController extends AsyncNotifier<Profile?> {
       final data = await _service.updateProfile(
         id: id,
         fullName: fullName,
+        nickname: nickname,
         bio: bio,
+        avatarFile: avatarFile,
       );
 
       return Profile.fromJson(data);

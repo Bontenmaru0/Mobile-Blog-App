@@ -4,6 +4,8 @@ import '../../auth/state/auth_controller.dart';
 import '../state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
 import '../../../shared/widgets/nav_user_menu.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
@@ -17,6 +19,10 @@ class _CreateProfileScreenState
     extends ConsumerState<CreateProfileScreen> {
   final TextEditingController fullNameController =
       TextEditingController();
+
+  final TextEditingController nickNameController =
+      TextEditingController();
+
   final TextEditingController bioController =
       TextEditingController();
 
@@ -25,11 +31,29 @@ class _CreateProfileScreenState
   bool isCreating = false;
   String? errorMessage;
 
+  String? avatarPath;
+
+  final ImagePicker _picker = ImagePicker();
+  File? selectedImage;
+
   @override
   void dispose() {
     fullNameController.dispose();
+    nickNameController.dispose();
     bioController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    final XFile? image =
+        await _picker.pickImage(source: ImageSource.gallery);
+
+    if (image != null) {
+      setState(() {
+        selectedImage = File(image.path);
+        avatarPath = image.path;
+      });
+    }
   }
 
   Future<void> submitProfile() async {
@@ -56,7 +80,9 @@ class _CreateProfileScreenState
           .createProfile(
             id: user.id,
             fullName: fullNameController.text.trim(),
+            nickName: nickNameController.text.trim(),
             bio: bioController.text.trim(),
+            avatarFile: selectedImage,
           );
 
       if (!mounted) return;
@@ -84,16 +110,15 @@ class _CreateProfileScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar:
-          AppBar(
-            title: const Text('Modern Samurai'),
-            actions: const [
-              Padding(
-                padding: EdgeInsets.only(right: 16),
-                child: NavUserMenu(),
-              ),
-            ],
+      appBar: AppBar(
+        title: const Text('Modern Samurai'),
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16),
+            child: NavUserMenu(),
           ),
+        ],
+      ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
@@ -144,13 +169,51 @@ class _CreateProfileScreenState
                       ),
                     ),
 
-                  // FULL NAME
+                  Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: CircleAvatar(
+                            radius: 50,
+                            backgroundColor: Colors.grey[300],
+                            backgroundImage: selectedImage != null
+                                ? FileImage(selectedImage!)
+                                : null,
+                            child: selectedImage == null
+                                ? const Icon(
+                                    Icons.camera_alt,
+                                    size: 32,
+                                    color: Colors.black,
+                                  )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          "Upload Avatar",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // full name
                   TextFormField(
                     controller: fullNameController,
+                    maxLength: 50, // ✅ ADDED
                     validator: (value) {
                       if (value == null ||
                           value.trim().isEmpty) {
                         return "Full name is required";
+                      }
+                      if (value.trim().length > 50) {
+                        return "Max 50 characters only";
                       }
                       return null;
                     },
@@ -180,14 +243,73 @@ class _CreateProfileScreenState
 
                   const SizedBox(height: 12),
 
-                  // BIO
+                  // nickname / tag
+                  TextFormField(
+                    controller: nickNameController,
+                    maxLength: 10,
+                    onChanged: (value) {
+                      final lower = value.toLowerCase();
+                      if (value != lower) {
+                        nickNameController.value =
+                            TextEditingValue(
+                          text: lower,
+                          selection:
+                              TextSelection.collapsed(
+                                  offset: lower.length),
+                        );
+                      }
+                    },
+                    validator: (value) {
+                      if (value == null ||
+                          value.trim().isEmpty) {
+                        return "Tag/Nickname is required";
+                      }
+                      if (value.contains(" ")) {
+                        return "No spaces allowed";
+                      }
+                      if (value.length > 10) {
+                        return "Max 10 characters only";
+                      }
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: "Tag / NickName",
+                      border: OutlineInputBorder(
+                        borderRadius:
+                            BorderRadius.zero,
+                      ),
+                      enabledBorder:
+                          OutlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors.black),
+                        borderRadius:
+                            BorderRadius.zero,
+                      ),
+                      focusedBorder:
+                          OutlineInputBorder(
+                        borderSide: BorderSide(
+                            color: Colors.black,
+                            width: 2),
+                        borderRadius:
+                            BorderRadius.zero,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  // bio
                   TextFormField(
                     controller: bioController,
                     maxLines: 3,
+                    maxLength: 500, // ✅ ADDED
                     validator: (value) {
                       if (value == null ||
                           value.trim().isEmpty) {
                         return "Bio is required";
+                      }
+                      if (value.trim().length > 500) {
+                        return "Max 500 characters only";
                       }
                       return null;
                     },
@@ -217,7 +339,7 @@ class _CreateProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // BUTTON
+                  // button
                   ElevatedButton(
                     onPressed:
                         isCreating ? null : submitProfile,

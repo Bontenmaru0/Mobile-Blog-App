@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../state/auth_controller.dart';
+import '../../auth/state/auth_controller.dart';
 import '../../profiles/state/profiles_controller.dart';
 import '../../../shared/widgets/nav_user_menu.dart';
 
@@ -40,10 +40,30 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
       error: (error, stackTrace) => Scaffold(
         body: Center(
-          child: Text(
-            "Something went wrong while fetching profile.",
-            // error.toString(),
-            // style: const TextStyle(color: Colors.red),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                error.toString(),
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.red),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                icon: const Icon(Icons.arrow_back),
+                label: const Text("Go Back"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  foregroundColor: Colors.white,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

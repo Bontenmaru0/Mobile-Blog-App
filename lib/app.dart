@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:blog_app/shared/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
-import 'features/auth/presentation/home_screen.dart';
+import 'features/blogs/presentation/home_screen.dart';
 import 'features/profiles/presentation/profile_screen.dart';
 
 class MyApp extends StatelessWidget {

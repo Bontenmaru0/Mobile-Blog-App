@@ -96,9 +96,9 @@ class _LoggedInAvatar extends ConsumerWidget {
           case 'profile':
             Navigator.pushNamed(context, '/profile_screen');
             break;
-          case 'posts':
-            Navigator.pushNamed(context, '/my-posts');
-            break;
+          // case 'posts':
+          //   Navigator.pushNamed(context, '/my-posts');
+          //   break;
           case 'logout':
             ref.read(authControllerProvider.notifier).logout();
             break;
@@ -109,10 +109,10 @@ class _LoggedInAvatar extends ConsumerWidget {
           value: 'profile',
           child: Text('My Profile'),
         ),
-        const PopupMenuItem(
-          value: 'posts',
-          child: Text('My Posts'),
-        ),
+        // const PopupMenuItem(
+        //   value: 'posts',
+        //   child: Text('My Posts'),
+        // ),
         const PopupMenuItem(
           value: 'logout',
           child: Text('Logout'),
