@@ -39,7 +39,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
       if (user != null) {
         Navigator.pop(context);
-        AppSnackBar.show(context, "Log in successful!", type: SnackType.success);
+        AppSnackBar.show(context, "Welcome back! Log in successful!👋", type: SnackType.success);
       }
     } catch (e) {
       setState(() {

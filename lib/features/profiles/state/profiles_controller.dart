@@ -13,9 +13,10 @@ final profilesControllerProvider =
 );
 
 class ProfilesController extends AsyncNotifier<Profile?> {
-  late final ProfilesService _service;
+  late ProfilesService _service;
 
   @override
+    //fetch profile on app start
     Future<Profile?> build() async {
     final authState = ref.watch(authControllerProvider);
     final user = authState.asData?.value;
@@ -29,15 +30,15 @@ class ProfilesController extends AsyncNotifier<Profile?> {
       if (data == null || data.isEmpty) return null;
 
       return Profile.fromJson(data.first);
-    } catch (e, st) {
+    } catch (e) {
       // Just log the error, but return null so HomeScreen behaves normally
-      print('ProfilesController build error: $e\n$st');
+      // print('ProfilesController build error: $e\n$st');
       return null;
     }
   }
 
 
-  // CREATE
+  // create
   Future<void> createProfile({
     required String id,
     required String fullName,
@@ -56,7 +57,7 @@ class ProfilesController extends AsyncNotifier<Profile?> {
     });
   }
 
-  // UPDATE
+  // update
   Future<void> updateProfile({
     required String id,
     required String fullName,

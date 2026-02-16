@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/state/auth_controller.dart';
 import '../state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
+import '../../../shared/widgets/nav_user_menu.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
@@ -66,8 +67,7 @@ class _CreateProfileScreenState
         type: SnackType.success,
       );
 
-      Navigator.pushNamedAndRemoveUntil(
-          context, '/', (route) => false);
+      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
     } catch (error) {
       setState(() {
         errorMessage = error.toString();
@@ -85,7 +85,15 @@ class _CreateProfileScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar:
-          AppBar(title: const Text('Create Profile')),
+          AppBar(
+            title: const Text('Modern Samurai'),
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: NavUserMenu(),
+              ),
+            ],
+          ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(

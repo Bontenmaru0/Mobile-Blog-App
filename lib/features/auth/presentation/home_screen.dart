@@ -31,23 +31,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     final user = authState.asData?.value;
 
     return profileState.when(
-      // 🔄 While checking profile
+      // while checking profile
       loading: () => const Scaffold(
         body: Center(
           child: CircularProgressIndicator(),
         ),
       ),
 
-      // ❌ If error happened
-      error: (error, stackTrace) => const Scaffold(
+      error: (error, stackTrace) => Scaffold(
         body: Center(
-          child: Text("Something went wrong"),
+          child: Text(
+            "Something went wrong while fetching profile.",
+            // error.toString(),
+            // style: const TextStyle(color: Colors.red),
+          ),
         ),
       ),
 
-      // ✅ When profile check finished
+      // when profile check finished
       data: (profile) {
-        // If user exists but profile doesn't → redirect
+        // if user exists but profile doesn't -> redirect
         if (user != null && profile == null) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (!mounted) return;
@@ -62,7 +65,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           );
         }
 
-        // ✅ Normal Home UI
+        // nomal home UI
         return Scaffold(
           appBar: AppBar(
             title: const Text('Modern Samurai'),

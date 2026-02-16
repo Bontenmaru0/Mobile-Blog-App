@@ -14,7 +14,7 @@ class NavUserMenu extends ConsumerWidget {
       if (previous?.value != null && next.value == null) {
         // user just logged out
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-        AppSnackBar.show( context, "Logged out successful!", type: SnackType.success);
+        AppSnackBar.show( context, "Logged out successful! See you later!👋", type: SnackType.success);
       }
     });
 
