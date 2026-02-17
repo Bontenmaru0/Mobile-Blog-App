@@ -95,7 +95,7 @@ class _LoggedInAvatar extends ConsumerWidget {
         height: 24,
         child: CircularProgressIndicator(strokeWidth: 2),
       ),
-      error: (_, __) => _defaultAvatar(user),
+      error: (error, stackTrace) => _defaultAvatar(user),
       data: (profile) {
         final avatarUrl = profile?.avatarUrl;
 
@@ -125,19 +125,37 @@ class _LoggedInAvatar extends ConsumerWidget {
             duration: const Duration(milliseconds: 300),
             transitionBuilder: (child, animation) =>
                 RotationTransition(turns: animation, child: child),
-            child: CircleAvatar(
+            child: Stack(
               key: ValueKey(avatarUrl ?? 'default-${user.id}'),
-              radius: 18,
-              backgroundColor: Colors.black,
-              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                  ? NetworkImage(avatarUrl)
-                  : null,
-              child: (avatarUrl == null || avatarUrl.isEmpty)
-                  ? Text(
-                      user.email?.substring(0, 1).toUpperCase() ?? 'U',
-                      style: const TextStyle(color: Colors.white),
-                    )
-                  : null,
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 18,
+                  backgroundColor: Colors.black,
+                  backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                      ? NetworkImage(avatarUrl)
+                      : null,
+                  child: (avatarUrl == null || avatarUrl.isEmpty)
+                      ? Text(
+                          user.email?.substring(0, 1).toUpperCase() ?? 'U',
+                          style: const TextStyle(color: Colors.white),
+                        )
+                      : null,
+                ),
+                const Positioned(
+                  bottom: -2,
+                  right: -2,
+                  child: CircleAvatar(
+                    radius: 8,
+                    backgroundColor: Colors.white,
+                    child: Icon(
+                      Icons.keyboard_arrow_down,
+                      size: 12,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         );

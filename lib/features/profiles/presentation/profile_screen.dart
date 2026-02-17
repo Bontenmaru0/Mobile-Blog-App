@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/state/auth_controller.dart';
 import '../../profiles/state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
+import 'widgets/avatar_viewer.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   const ProfileScreen({super.key});
@@ -116,7 +117,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
                 final bio = profile?.bio.isNotEmpty == true
                     ? profile!.bio
-                    : "Disciplined. Focused. Building the digital dojo.";
+                    : "This ronin has not set up a bio yet. They are a mysterious warrior of the digital realm...";
 
                 final avatarUrl = profile?.avatarUrl;
                 final fallbackLetter =
@@ -147,25 +148,45 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                         Positioned(
                           bottom: -55,
                           left: 20,
-                          child: CircleAvatar(
-                            radius: 55,
-                            backgroundColor: Colors.black,
-                            child: CircleAvatar(
-                              radius: 52,
-                              backgroundColor: Colors.grey,
-                              backgroundImage: avatarUrl != null && avatarUrl.isNotEmpty
-                                  ? NetworkImage(avatarUrl)
-                                  : null,
-                              child: (avatarUrl == null || avatarUrl.isEmpty)
-                                  ? Text(
-                                      fallbackLetter,
-                                      style: const TextStyle(
-                                        fontSize: 42,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.black,
-                                      ),
-                                    )
-                                  : null,
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  opaque: false,
+                                  pageBuilder: (context, animation, secondaryAnimation) => AvatarViewer(
+                                    imageUrl: avatarUrl,
+                                    fullName: fullName,
+                                    nickname: nickname,
+                                    fallbackLetter: fallbackLetter,
+                                  ),
+                                ),
+                              );
+                            },
+                            child: Hero(
+                              tag: "profileAvatar",
+                              child: CircleAvatar(
+                                radius: 55,
+                                backgroundColor: Colors.black,
+                                child: CircleAvatar(
+                                  radius: 52,
+                                  backgroundColor: Colors.grey,
+                                  backgroundImage:
+                                      avatarUrl != null && avatarUrl.isNotEmpty
+                                          ? NetworkImage(avatarUrl)
+                                          : null,
+                                  child: (avatarUrl == null || avatarUrl.isEmpty)
+                                      ? Text(
+                                          fallbackLetter,
+                                          style: const TextStyle(
+                                            fontSize: 42,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
                             ),
                           ),
                         ),
