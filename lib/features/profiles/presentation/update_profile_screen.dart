@@ -3,38 +3,45 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/state/auth_controller.dart';
 import '../state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
-import '../../../shared/widgets/nav_user_menu.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 
-class CreateProfileScreen extends ConsumerStatefulWidget {
-  const CreateProfileScreen({super.key});
+class UpdateProfileScreen extends ConsumerStatefulWidget {
+  const UpdateProfileScreen({super.key});
 
   @override
-  ConsumerState<CreateProfileScreen> createState() =>
-      _CreateProfileScreenState();
+  ConsumerState<UpdateProfileScreen> createState() =>
+      _UpdateProfileScreenState();
 }
 
-class _CreateProfileScreenState
-    extends ConsumerState<CreateProfileScreen> {
-  final TextEditingController fullNameController =
-      TextEditingController();
-
-  final TextEditingController nickNameController =
-      TextEditingController();
-
-  final TextEditingController bioController =
-      TextEditingController();
-
+class _UpdateProfileScreenState
+    extends ConsumerState<UpdateProfileScreen> {
+  final TextEditingController fullNameController = TextEditingController();
+  final TextEditingController nickNameController = TextEditingController();
+  final TextEditingController bioController = TextEditingController();
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
-  bool isCreating = false;
+  bool isUpdating = false;
   String? errorMessage;
-
-  String? avatarPath;
-
+ 
   final ImagePicker _picker = ImagePicker();
-  File? selectedImage;
+  String? originalAvatarUrl; // DB avatar URL
+  File? selectedImage;        // new picked file
+  bool isAvatarRemoved = false; // tracks if user removed avatar
+
+
+  @override
+  void initState() {
+    super.initState();
+    // pre-fill the fields from existing profile
+    final profile = ref.read(profilesControllerProvider).asData?.value;
+    if (profile != null) {
+      fullNameController.text = profile.fullName;
+      nickNameController.text = profile.nickname;
+      bioController.text = profile.bio;
+      originalAvatarUrl = profile.avatarUrl;
+    }
+  }
 
   @override
   void dispose() {
@@ -51,16 +58,22 @@ class _CreateProfileScreenState
     if (image != null) {
       setState(() {
         selectedImage = File(image.path);
-        avatarPath = image.path;
+        isAvatarRemoved = false;
       });
     }
   }
 
-  Future<void> submitProfile() async {
+  void _removeAvatar() {
+    setState(() {
+      selectedImage = null;
+      isAvatarRemoved = true;
+    });
+  }
+
+  Future<void> saveProfile() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final user =
-        ref.read(authControllerProvider).value;
+    final user = ref.read(authControllerProvider).value;
 
     if (user == null) {
       setState(() {
@@ -70,26 +83,28 @@ class _CreateProfileScreenState
     }
 
     setState(() {
-      isCreating = true;
+      isUpdating = true;
       errorMessage = null;
     });
 
     try {
-      await ref
-          .read(profilesControllerProvider.notifier)
-          .createProfile(
-            id: user.id,
-            fullName: fullNameController.text.trim(),
-            nickName: nickNameController.text.trim(),
-            bio: bioController.text.trim(),
-            avatarFile: selectedImage,
-          );
+      // if both selectedImage & originalAvatarUrl are null => delete avatar
+      final deleteAvatar = isAvatarRemoved && selectedImage == null;
+
+      await ref.read(profilesControllerProvider.notifier).updateProfile(
+        id: user.id,
+        fullName: fullNameController.text.trim(),
+        nickName: nickNameController.text.trim(),
+        bio: bioController.text.trim(),
+        avatarFile: selectedImage,
+        deleteOldAvatar: deleteAvatar,
+      );
 
       if (!mounted) return;
 
       AppSnackBar.show(
         context,
-        "Profile created! 🚀",
+        "Profile updated! 🚀",
         type: SnackType.success,
       );
 
@@ -101,29 +116,66 @@ class _CreateProfileScreenState
     } finally {
       if (mounted) {
         setState(() {
-          isCreating = false;
+          isUpdating = false;
         });
       }
     }
   }
 
+  Future<void> _confirmLogout(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Logout"),
+          content: const Text("Are you sure you want to logout?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text("Logout"),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (shouldLogout == true) {
+      await ref.read(authControllerProvider.notifier).logout();
+      // ignore: use_build_context_synchronously
+      AppSnackBar.show( context, "Logged out successful! See you later!👋", type: SnackType.success);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final profileState = ref.watch(profilesControllerProvider);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Modern Samurai'),
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: 16),
-            child: NavUserMenu(),
+        title: profileState.when(
+          data: (profile) {
+            final nickname = profile?.nickname.isNotEmpty == true
+                ? "@${profile!.nickname}'s Profile"
+                : "@ronin";
+            return Text(nickname);
+          },
+          loading: () => const Text("Loading..."),
+          error: (e, st) => const Text("Profile"),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () => _confirmLogout(context),
           ),
         ],
       ),
       body: Center(
         child: SingleChildScrollView(
           child: Container(
-            width:
-                MediaQuery.of(context).size.width * 0.9,
+            width: MediaQuery.of(context).size.width * 0.9,
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -133,11 +185,10 @@ class _CreateProfileScreenState
             child: Form(
               key: _formKey,
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.stretch,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const Text(
-                    "Create Your Profile",
+                    "Update Your Profile",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 24,
@@ -145,7 +196,7 @@ class _CreateProfileScreenState
                     ),
                   ),
                   const Text(
-                    "Create your identity to begin blogging.",
+                    "You may modify your profile details and save changes.",
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -156,14 +207,12 @@ class _CreateProfileScreenState
 
                   if (errorMessage != null)
                     Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.only(bottom: 12),
                       child: Text(
                         errorMessage!,
                         textAlign: TextAlign.center,
                         style: const TextStyle(
-                          color: Color.fromARGB(
-                              255, 194, 0, 0),
+                          color: Color.fromARGB(255, 194, 0, 0),
                           fontSize: 13,
                         ),
                       ),
@@ -179,8 +228,11 @@ class _CreateProfileScreenState
                             backgroundColor: Colors.grey[300],
                             backgroundImage: selectedImage != null
                                 ? FileImage(selectedImage!)
-                                : null,
-                            child: selectedImage == null
+                                : (!isAvatarRemoved && originalAvatarUrl != null && originalAvatarUrl!.isNotEmpty)
+                                    ? NetworkImage(originalAvatarUrl!)
+                                    : null,
+                            child: selectedImage == null &&
+                                    (isAvatarRemoved || originalAvatarUrl == null || originalAvatarUrl!.isEmpty)
                                 ? const Icon(
                                     Icons.camera_alt,
                                     size: 32,
@@ -198,14 +250,9 @@ class _CreateProfileScreenState
                           ),
                         ),
                         // delete avatar button
-                        if (avatarPath != null || selectedImage != null)
+                        if (selectedImage != null || (!isAvatarRemoved && originalAvatarUrl != null && originalAvatarUrl!.isNotEmpty))
                           TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                selectedImage = null;
-                                avatarPath = null;
-                              });
-                            },
+                            onPressed: _removeAvatar,
                             icon: const Icon(Icons.delete, size: 16, color: Colors.red),
                             label: const Text(
                               "Remove Avatar",
@@ -221,10 +268,9 @@ class _CreateProfileScreenState
                   // full name
                   TextFormField(
                     controller: fullNameController,
-                    maxLength: 50, // ✅ ADDED
+                    maxLength: 50,
                     validator: (value) {
-                      if (value == null ||
-                          value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return "Full name is required";
                       }
                       if (value.trim().length > 50) {
@@ -235,23 +281,15 @@ class _CreateProfileScreenState
                     decoration: const InputDecoration(
                       labelText: "Full Name",
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.zero,
+                        borderRadius: BorderRadius.zero,
                       ),
-                      enabledBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black),
-                        borderRadius:
-                            BorderRadius.zero,
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
                       ),
-                      focusedBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black,
-                            width: 2),
-                        borderRadius:
-                            BorderRadius.zero,
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
                       ),
                     ),
                   ),
@@ -265,18 +303,14 @@ class _CreateProfileScreenState
                     onChanged: (value) {
                       final lower = value.toLowerCase();
                       if (value != lower) {
-                        nickNameController.value =
-                            TextEditingValue(
+                        nickNameController.value = TextEditingValue(
                           text: lower,
-                          selection:
-                              TextSelection.collapsed(
-                                  offset: lower.length),
+                          selection: TextSelection.collapsed(offset: lower.length),
                         );
                       }
                     },
                     validator: (value) {
-                      if (value == null ||
-                          value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return "Tag/Nickname is required";
                       }
                       if (value.contains(" ")) {
@@ -290,23 +324,15 @@ class _CreateProfileScreenState
                     decoration: const InputDecoration(
                       labelText: "Tag / NickName",
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.zero,
+                        borderRadius: BorderRadius.zero,
                       ),
-                      enabledBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black),
-                        borderRadius:
-                            BorderRadius.zero,
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
                       ),
-                      focusedBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black,
-                            width: 2),
-                        borderRadius:
-                            BorderRadius.zero,
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
                       ),
                     ),
                   ),
@@ -317,10 +343,9 @@ class _CreateProfileScreenState
                   TextFormField(
                     controller: bioController,
                     maxLines: 3,
-                    maxLength: 500, // ✅ ADDED
+                    maxLength: 500,
                     validator: (value) {
-                      if (value == null ||
-                          value.trim().isEmpty) {
+                      if (value == null || value.trim().isEmpty) {
                         return "Bio is required";
                       }
                       if (value.trim().length > 500) {
@@ -331,23 +356,15 @@ class _CreateProfileScreenState
                     decoration: const InputDecoration(
                       labelText: "Bio",
                       border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.zero,
+                        borderRadius: BorderRadius.zero,
                       ),
-                      enabledBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black),
-                        borderRadius:
-                            BorderRadius.zero,
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black),
+                        borderRadius: BorderRadius.zero,
                       ),
-                      focusedBorder:
-                          OutlineInputBorder(
-                        borderSide: BorderSide(
-                            color: Colors.black,
-                            width: 2),
-                        borderRadius:
-                            BorderRadius.zero,
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.black, width: 2),
+                        borderRadius: BorderRadius.zero,
                       ),
                     ),
                   ),
@@ -356,35 +373,26 @@ class _CreateProfileScreenState
 
                   // button
                   ElevatedButton(
-                    onPressed:
-                        isCreating ? null : submitProfile,
-                    style:
-                        ElevatedButton.styleFrom(
-                      backgroundColor:
-                          Colors.black,
-                      shape:
-                          const RoundedRectangleBorder(
-                        borderRadius:
-                            BorderRadius.zero,
+                    onPressed: isUpdating ? null : saveProfile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.zero,
                       ),
-                      padding:
-                          const EdgeInsets.symmetric(
-                              vertical: 14),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                     ),
-                    child: isCreating
+                    child: isUpdating
                         ? const SizedBox(
                             height: 20,
                             width: 20,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               color: Colors.white,
                               strokeWidth: 2,
                             ),
                           )
                         : const Text(
-                            "Create Profile",
-                            style: TextStyle(
-                                color: Colors.white),
+                            "Update Profile",
+                            style: TextStyle(color: Colors.white),
                           ),
                   ),
                 ],

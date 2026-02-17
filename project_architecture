@@ -20,6 +20,11 @@ lib/
 │   │   ├── presentation/
 │   │   │   └── widgets/
 │   │   └── state/
+│   ├── profiles/
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   │   └── widgets/
+│   │   └── state/
 │   └── comments/
 │       ├── data/
 │       ├── presentation/

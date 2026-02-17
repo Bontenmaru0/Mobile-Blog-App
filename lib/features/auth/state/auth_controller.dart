@@ -48,7 +48,7 @@ class AuthController extends StateNotifier<AsyncValue<User?>> {
     }
   }
 
-  void logout() async {
+  Future<void> logout() async {
     state = const AsyncValue.loading();
     try {
       await _authService.signOut();

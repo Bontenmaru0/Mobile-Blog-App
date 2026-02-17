@@ -6,7 +6,7 @@ class ProfilesService {
   final SupabaseClient _supabase = Supabase.instance.client;
   final Uuid _uuid = const Uuid();
 
-  // helper: convert Supabase RPC row to Map<String, dynamic>
+  // helper: convert Supabase RPC row to Map<String, dynamic>, will separate later
   Map<String, dynamic> _extractSingleRow(dynamic rpcResponse) {
     final list = rpcResponse as List<dynamic>;
     if (list.isEmpty) throw Exception("No data returned from RPC");
@@ -15,7 +15,7 @@ class ProfilesService {
 
   // fetch profile
   Future<List<Map<String, dynamic>>> fetchProfile() async {
-    final response = await _supabase.rpc('get_user_profile');
+    final response = await _supabase.rpc('get_user_profile_mobile');
     final list = response as List<dynamic>;
     return list.map((e) => Map<String, dynamic>.from(e)).toList();
   }
@@ -62,9 +62,30 @@ class ProfilesService {
     required String nickname,
     required String bio,
     File? avatarFile,
+    bool deleteOldAvatar = false,
   }) async {
     String? avatarUrl;
 
+    // 1️⃣ Get current profile to know old avatar
+    final currentProfile = await fetchProfile();
+    String? existingAvatarUrl =
+        currentProfile.isNotEmpty ? currentProfile.first['avatar_url'] : null;
+
+    // 2️⃣ If deleting old avatar OR replacing it
+    if ((deleteOldAvatar || avatarFile != null) &&
+        existingAvatarUrl != null &&
+        existingAvatarUrl.isNotEmpty) {
+
+      final uri = Uri.parse(existingAvatarUrl);
+      final filePath = uri.pathSegments.skip(1).join('/'); 
+      // removes bucket name from URL
+
+      await _supabase.storage
+          .from('profile_images')
+          .remove([filePath]);
+    }
+
+    // 3️⃣ Upload new avatar if provided
     if (avatarFile != null) {
       final fileName = '${_uuid.v4()}-${avatarFile.path.split('/').last}';
       final filePath = 'avatars/$fileName';
@@ -73,9 +94,14 @@ class ProfilesService {
           .from('profile_images')
           .uploadBinary(filePath, await avatarFile.readAsBytes());
 
-      avatarUrl = _supabase.storage.from('profile_images').getPublicUrl(filePath);
+      avatarUrl =
+          _supabase.storage.from('profile_images').getPublicUrl(filePath);
+    } else if (!deleteOldAvatar) {
+      // keep old avatar if not deleting
+      avatarUrl = existingAvatarUrl;
     }
 
+    // 4️⃣ Update database
     final response = await _supabase.rpc(
       'update_profile_mobile',
       params: {

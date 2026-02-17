@@ -56,8 +56,8 @@ class ProfilesController extends AsyncNotifier<Profile?> {
         avatarFile: avatarFile,
       );
 
-      print("DATA FROM SERVICE: $data");
-      print("TYPE: ${data.runtimeType}");
+      // print("DATA FROM SERVICE: $data");
+      // print("TYPE: ${data.runtimeType}");
 
       return Profile.fromJson(data);
     });
@@ -67,9 +67,10 @@ class ProfilesController extends AsyncNotifier<Profile?> {
   Future<void> updateProfile({
     required String id,
     required String fullName,
-    required String nickname,
+    required String nickName,
     required String bio,
     File? avatarFile,
+    bool deleteOldAvatar = false,
   }) async {
     state = const AsyncLoading();
 
@@ -77,9 +78,10 @@ class ProfilesController extends AsyncNotifier<Profile?> {
       final data = await _service.updateProfile(
         id: id,
         fullName: fullName,
-        nickname: nickname,
+        nickname: nickName,
         bio: bio,
         avatarFile: avatarFile,
+        deleteOldAvatar: deleteOldAvatar,
       );
 
       return Profile.fromJson(data);

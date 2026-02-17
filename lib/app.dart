@@ -5,6 +5,7 @@ import 'features/auth/presentation/login_screen.dart';
 import 'features/auth/presentation/register_screen.dart';
 import 'features/blogs/presentation/home_screen.dart';
 import 'features/profiles/presentation/profile_screen.dart';
+import 'features/profiles/presentation/update_profile_screen.dart';
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -31,6 +32,7 @@ class _AppView extends StatelessWidget {
         '/register_screen': (context) => const RegisterScreen(),
         '/profile_screen': (context) => const ProfileScreen(),
         '/create_profile_screen': (context) => const CreateProfileScreen(),
+        '/update_profile_screen': (context) => const UpdateProfileScreen(),
       },
     );
   }

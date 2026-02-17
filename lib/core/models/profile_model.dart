@@ -19,7 +19,7 @@ class Profile {
       fullName: json['full_name'] ?? '',
       nickname: json['nickname'] ?? '',
       bio: json['bio'] ?? '',
-      avatarUrl: json['avatar_url'],
+      avatarUrl: json['avatar_url'] ?? '',
     );
   }
 
