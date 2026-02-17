@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../features/auth/state/auth_controller.dart';
+import '../../../features/profiles/state/profiles_controller.dart';
 import '../../core/utils/app_snackbar.dart';
 
 class NavUserMenu extends ConsumerWidget {
@@ -86,78 +87,73 @@ class _LoggedInAvatar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final authState = ref.watch(authControllerProvider);
-    final isLoading = authState is AsyncLoading;
+    final profileState = ref.watch(profilesControllerProvider);
 
-    return PopupMenuButton<String>(
-      offset: const Offset(0, 45),
-      onSelected: (value) {
-        switch (value) {
-          case 'profile':
-            Navigator.pushNamed(context, '/profile_screen');
-            break;
-          // case 'posts':
-          //   Navigator.pushNamed(context, '/my-posts');
-          //   break;
-          case 'logout':
-            ref.read(authControllerProvider.notifier).logout();
-            break;
-        }
-      },
-      itemBuilder: (context) => [
-        const PopupMenuItem(
-          value: 'profile',
-          child: Text('My Profile'),
-        ),
-        // const PopupMenuItem(
-        //   value: 'posts',
-        //   child: Text('My Posts'),
-        // ),
-        const PopupMenuItem(
-          value: 'logout',
-          child: Text('Logout'),
-        ),
-      ],
-      child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 300),
-        transitionBuilder: (child, animation) =>
-            RotationTransition(turns: animation, child: child),
-        child: isLoading
-            ? const SizedBox(
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(strokeWidth: 2),
-              )
-            : Stack(
-                key: const ValueKey('avatar'),
-                clipBehavior: Clip.none,
-                children: [
-                  CircleAvatar(
-                    radius: 18,
-                    backgroundColor: Colors.black,
-                    child: Text(
+    return profileState.when(
+      loading: () => const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      error: (_, __) => _defaultAvatar(user),
+      data: (profile) {
+        final avatarUrl = profile?.avatarUrl;
+
+        return PopupMenuButton<String>(
+          offset: const Offset(0, 45),
+          onSelected: (value) {
+            switch (value) {
+              case 'profile':
+                Navigator.pushNamed(context, '/profile_screen');
+                break;
+              case 'logout':
+                ref.read(authControllerProvider.notifier).logout();
+                break;
+            }
+          },
+          itemBuilder: (context) => const [
+            PopupMenuItem(
+              value: 'profile',
+              child: Text('My Profile'),
+            ),
+            PopupMenuItem(
+              value: 'logout',
+              child: Text('Logout'),
+            ),
+          ],
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 300),
+            transitionBuilder: (child, animation) =>
+                RotationTransition(turns: animation, child: child),
+            child: CircleAvatar(
+              key: ValueKey(avatarUrl ?? 'default-${user.id}'),
+              radius: 18,
+              backgroundColor: Colors.black,
+              backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
+                  ? NetworkImage(avatarUrl)
+                  : null,
+              child: (avatarUrl == null || avatarUrl.isEmpty)
+                  ? Text(
                       user.email?.substring(0, 1).toUpperCase() ?? 'U',
                       style: const TextStyle(color: Colors.white),
-                    ),
-                  ),
-                  const Positioned(
-                    bottom: -2,
-                    right: -2,
-                    child: CircleAvatar(
-                      radius: 8,
-                      backgroundColor: Colors.white,
-                      child: Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 12,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-      ),
+                    )
+                  : null,
+            ),
+          ),
+        );
+      },
     );
   }
+
+  Widget _defaultAvatar(User user) => CircleAvatar(
+        radius: 18,
+        backgroundColor: Colors.black,
+        child: Text(
+          user.email?.substring(0, 1).toUpperCase() ?? 'U',
+          style: const TextStyle(color: Colors.white),
+        ),
+      );
 }
+
 
 

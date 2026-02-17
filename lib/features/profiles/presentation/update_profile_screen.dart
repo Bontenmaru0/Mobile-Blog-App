@@ -162,7 +162,14 @@ class _UpdateProfileScreenState
                 : "@ronin";
             return Text(nickname);
           },
-          loading: () => const Text("Loading..."),
+          loading: () => const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.black, // matches AppBar text color
+            ),
+          ),
           error: (e, st) => const Text("Profile"),
         ),
         actions: [
