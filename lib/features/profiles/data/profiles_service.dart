@@ -1,9 +1,10 @@
 import 'dart:io';
+import '../../../core/services/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 class ProfilesService {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  final SupabaseClient _supabase = SupabaseService.client;
   final Uuid _uuid = const Uuid();
 
   // helper: convert Supabase RPC row to Map<String, dynamic>, will separate later
@@ -66,12 +67,12 @@ class ProfilesService {
   }) async {
     String? avatarUrl;
 
-    // 1️⃣ Get current profile to know old avatar
+    // get current profile to know old avatar
     final currentProfile = await fetchProfile();
     String? existingAvatarUrl =
         currentProfile.isNotEmpty ? currentProfile.first['avatar_url'] : null;
 
-    // 2️⃣ If deleting old avatar OR replacing it
+    // if deleting old avatar OR replacing it
     if ((deleteOldAvatar || avatarFile != null) &&
         existingAvatarUrl != null &&
         existingAvatarUrl.isNotEmpty) {
@@ -85,7 +86,7 @@ class ProfilesService {
           .remove([filePath]);
     }
 
-    // 3️⃣ Upload new avatar if provided
+    // upload new avatar if provided
     if (avatarFile != null) {
       final fileName = '${_uuid.v4()}-${avatarFile.path.split('/').last}';
       final filePath = 'avatars/$fileName';
@@ -101,7 +102,7 @@ class ProfilesService {
       avatarUrl = existingAvatarUrl;
     }
 
-    // 4️⃣ Update database
+    // update database
     final response = await _supabase.rpc(
       'update_profile_mobile',
       params: {

@@ -55,7 +55,7 @@ class NavUserMenu extends ConsumerWidget {
             mainAxisSize: MainAxisSize.min, // important for AppBar
             children: [
               IconButton(
-                icon: const Icon(Icons.person_add), // correct register icon
+                icon: const Icon(Icons.person_add),
                 onPressed: () {
                   Navigator.pushNamed(context, '/register_screen');
                 },
