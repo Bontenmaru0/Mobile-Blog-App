@@ -7,6 +7,7 @@ import '../../blogs/state/blogs_controller.dart';
 import '../../blogs/presentation/widgets/article_image_grid.dart';
 import '../../../core/constants/time_ago.dart';
 import 'widgets/image_gallery_page.dart';
+import 'widgets/create_article.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -232,7 +233,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 ),
                                 side: const BorderSide(color: Colors.black),
                               ),
-                              onPressed: () {},
+                              onPressed: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => const CreateArticle(),
+                                  ),
+                                );
+                              },
                               child: const Text(
                                 "Create Post",
                                 style: TextStyle(color: Colors.black),
@@ -280,13 +288,92 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         crossAxisAlignment:
                                             CrossAxisAlignment.start,
                                         children: [
-                                          Text(
-                                            article.title,
-                                            style: const TextStyle(
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          Row(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Expanded(
+                                                child: Text(
+                                                  article.title,
+                                                  style: const TextStyle(
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ),
+
+                                              // 3 dots menu
+                                              if (user !=
+                                                  null) // optional: only show if logged in
+                                                PopupMenuButton<String>(
+                                                  icon: const Icon(
+                                                    Icons.more_vert,
+                                                  ),
+                                                  onSelected: (value) {
+                                                    if (value == 'edit') {
+                                                      print(
+                                                        "Edit article: ${article.id}",
+                                                      );
+                                                      // TODO: Navigate to edit screen
+                                                    } else if (value ==
+                                                        'delete') {
+                                                      showDialog(
+                                                        context: context,
+                                                        builder: (context) => AlertDialog(
+                                                          title: const Text(
+                                                            "Delete Article",
+                                                          ),
+                                                          content: const Text(
+                                                            "Are you sure you want to delete this article?",
+                                                          ),
+                                                          actions: [
+                                                            TextButton(
+                                                              onPressed: () =>
+                                                                  Navigator.pop(
+                                                                    context,
+                                                                  ),
+                                                              child: const Text(
+                                                                "Cancel",
+                                                              ),
+                                                            ),
+                                                            TextButton(
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                  context,
+                                                                );
+                                                                print(
+                                                                  "Deleted article: ${article.id}",
+                                                                );
+                                                                // TODO: Call delete function
+                                                              },
+                                                              child: const Text(
+                                                                "Delete",
+                                                                style: TextStyle(
+                                                                  color: Colors
+                                                                      .red,
+                                                                ),
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      );
+                                                    }
+                                                  },
+                                                  itemBuilder: (context) =>
+                                                      const [
+                                                        PopupMenuItem(
+                                                          value: 'edit',
+                                                          child: Text("Edit"),
+                                                        ),
+                                                        PopupMenuItem(
+                                                          value: 'delete',
+                                                          child: Text("Delete"),
+                                                        ),
+                                                      ],
+                                                ),
+                                            ],
                                           ),
+
                                           const SizedBox(height: 8),
                                           Text(article.content),
                                           const SizedBox(height: 12),
@@ -298,10 +385,12 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               Navigator.push(
                                                 context,
                                                 MaterialPageRoute(
-                                                  builder: (_) => ImageGalleryPage(
-                                                    images: article.images, // all images
-                                                    initialIndex: index,
-                                                  ),
+                                                  builder: (_) =>
+                                                      ImageGalleryPage(
+                                                        images: article
+                                                            .images, // all images
+                                                        initialIndex: index,
+                                                      ),
                                                 ),
                                               );
                                             },
