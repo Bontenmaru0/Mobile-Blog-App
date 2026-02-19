@@ -9,6 +9,7 @@ import '../../../core/constants/time_ago.dart';
 import 'widgets/image_gallery_page.dart';
 import 'widgets/create_article.dart';
 import 'widgets/update_article.dart';
+import '../../../shared/widgets/app_refresh.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -38,8 +39,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     });
   }
 
-  void _fetch() {
-    ref
+  Future<void> _fetch() async {
+    await ref
         .read(blogsControllerProvider.notifier)
         .fetchArticles(
           limit: limit,
@@ -267,7 +268,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                             ? const Center(
                                 child: Text("No available articles."),
                               )
-                            : ListView.builder(
+                            : AppRefreshWrapper(
+                            onRefresh: () async {
+                              setState(() {
+                                page = 1; // reset to first page on pull
+                              });
+                              await _fetch();
+                            },
+                            child: ListView.builder(
                                 itemCount: blogState.articles.length,
                                 itemBuilder: (context, index) {
                                   final article = blogState.articles[index];
@@ -467,8 +475,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       ),
                                     ),
                                   );
+                                  
                                 },
                               ),
+                            ),
                       ),
 
                       // pagination

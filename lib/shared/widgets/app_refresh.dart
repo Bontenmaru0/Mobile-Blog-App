@@ -13,6 +13,8 @@ class AppRefreshWrapper extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return RefreshIndicator(
+      color: Colors.black,
+      backgroundColor: Colors.white,
       onRefresh: onRefresh,
       child: child,
     );
