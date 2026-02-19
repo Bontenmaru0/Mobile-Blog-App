@@ -8,6 +8,7 @@ import '../../blogs/presentation/widgets/article_image_grid.dart';
 import '../../../core/constants/time_ago.dart';
 import 'widgets/image_gallery_page.dart';
 import 'widgets/create_article.dart';
+import 'widgets/update_article.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -237,7 +238,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const CreateArticle(),
+                                    builder: (_) => const CreateArticleScreen(),
                                   ),
                                 );
                               },
@@ -270,6 +271,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 itemCount: blogState.articles.length,
                                 itemBuilder: (context, index) {
                                   final article = blogState.articles[index];
+                                  final isDeleting =
+                                      blogState.deleteArticleLoadingById[article
+                                          .id] ??
+                                      false;
 
                                   return Card(
                                     color: Colors.white,
@@ -306,13 +311,29 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                               if (user !=
                                                   null) // optional: only show if logged in
                                                 PopupMenuButton<String>(
-                                                  icon: const Icon(
-                                                    Icons.more_vert,
-                                                  ),
+                                                  icon: isDeleting
+                                                      ? const SizedBox(
+                                                          width: 20,
+                                                          height: 20,
+                                                          child:
+                                                              CircularProgressIndicator(
+                                                                strokeWidth: 2,
+                                                              ),
+                                                        )
+                                                      : const Icon(
+                                                          Icons.more_vert,
+                                                        ),
                                                   onSelected: (value) {
                                                     if (value == 'edit') {
-                                                      print(
-                                                        "Edit article: ${article.id}",
+                                                      Navigator.push(
+                                                        context,
+                                                        MaterialPageRoute(
+                                                          builder: (_) =>
+                                                              UpdateArticleScreen(
+                                                                article:
+                                                                    article,
+                                                              ),
+                                                        ),
                                                       );
                                                       // TODO: Navigate to edit screen
                                                     } else if (value ==
@@ -337,14 +358,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                               ),
                                                             ),
                                                             TextButton(
-                                                              onPressed: () {
+                                                              onPressed: () async {
                                                                 Navigator.pop(
                                                                   context,
                                                                 );
-                                                                print(
-                                                                  "Deleted article: ${article.id}",
-                                                                );
-                                                                // TODO: Call delete function
+
+                                                                await ref
+                                                                    .read(
+                                                                      blogsControllerProvider
+                                                                          .notifier,
+                                                                    )
+                                                                    .deleteArticle(
+                                                                      id: article
+                                                                          .id,
+                                                                      removedImages:
+                                                                          article
+                                                                              .images,
+                                                                    );
+
+                                                                // optional: refetch if using pagination
+                                                                _fetch();
                                                               },
                                                               child: const Text(
                                                                 "Delete",

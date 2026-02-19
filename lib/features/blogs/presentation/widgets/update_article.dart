@@ -2,18 +2,21 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../state/blogs_controller.dart';
+import '../../../blogs/state/blogs_controller.dart';
 import '../../../profiles/state/profiles_controller.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/models/blogs_model.dart';
 
-class CreateArticleScreen extends ConsumerStatefulWidget {
-  const CreateArticleScreen({super.key});
+class UpdateArticleScreen extends ConsumerStatefulWidget {
+  final Article article;
+
+  const UpdateArticleScreen({super.key, required this.article});
 
   @override
-  ConsumerState<CreateArticleScreen> createState() => _CreateArticleScreenState();
+  ConsumerState<UpdateArticleScreen> createState() => _UpdateArticleScreenState();
 }
 
-class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
+class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
   final titleController = TextEditingController();
   final contentController = TextEditingController();
 
@@ -21,6 +24,18 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
 
   final ImagePicker _picker = ImagePicker();
   List<File> selectedImages = [];
+
+  List<String> existingImages = [];
+  List<String> removedImages = [];
+
+  @override
+  void initState() {
+    super.initState();
+    titleController.text = widget.article.title;
+    contentController.text = widget.article.content;
+
+    existingImages = List.from(widget.article.images);
+  }
 
   Future<void> pickImages() async {
     final images = await _picker.pickMultiImage();
@@ -35,6 +50,13 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
   void removeImage(int index) {
     setState(() {
       selectedImages.removeAt(index);
+    });
+  }
+
+  void removeExistingImage(int index) {
+    setState(() {
+      removedImages.add(existingImages[index]);
+      existingImages.removeAt(index);
     });
   }
 
@@ -54,10 +76,12 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
     try {
       await ref
           .read(blogsControllerProvider.notifier)
-          .createArticle(
+          .updateArticle(
+            id: widget.article.id,
             title: titleController.text.trim(),
             content: contentController.text.trim(),
             files: selectedImages,
+            removedImages: removedImages,
           );
 
       await ref
@@ -68,14 +92,14 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
 
       AppSnackBar.show(
         context,
-        "Article created successfully!🚀",
+        "Article updated successfully!✏️",
         type: SnackType.success,
       );
 
       Navigator.pop(context);
     } catch (e) {
       setState(() {
-        errorMessage = "Article creation failed.";
+        errorMessage = "Article update failed.";
       });
     }
   }
@@ -84,7 +108,8 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
   Widget build(BuildContext context) {
     final profile = ref.watch(profilesControllerProvider).asData?.value;
     final blogState = ref.watch(blogsControllerProvider);
-    final isLoading = blogState.insertArticleLoading;
+    final isLoading =
+        blogState.updateArticleLoadingById[widget.article.id] ?? false;
 
     return Scaffold(
       appBar: AppBar(),
@@ -105,7 +130,7 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text(
-                  "Create Article",
+                  "Update your thoughts",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400),
                 ),
@@ -113,7 +138,7 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
                 const SizedBox(height: 8),
 
                 const Text(
-                  "Share something meaningful.",
+                  "Share your latest insights, stories, or ideas with your audience.",
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 13, color: Colors.grey),
                 ),
@@ -189,6 +214,46 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
                 const SizedBox(height: 12),
 
                 /// IMAGE PREVIEW
+                if (existingImages.isNotEmpty)
+                  SizedBox(
+                    height: 100,
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: existingImages.length,
+                      itemBuilder: (context, index) {
+                        return Stack(
+                          children: [
+                            Container(
+                              margin: const EdgeInsets.only(right: 8),
+                              width: 100,
+                              height: 100,
+                              child: Image.network(
+                                existingImages[index],
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                            Positioned(
+                              right: 8,
+                              top: 4,
+                              child: GestureDetector(
+                                onTap: () => removeExistingImage(index),
+                                child: const CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: Colors.black,
+                                  child: Icon(
+                                    Icons.close,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+
                 if (selectedImages.isNotEmpty)
                   SizedBox(
                     height: 100,
@@ -265,7 +330,7 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
                       borderRadius: BorderRadius.zero,
                     ),
                   ),
-                  child: Text(isLoading ? "POSTING..." : "POST"),
+                  child: Text(isLoading ? "SAVING..." : "SAVE"),
                 ),
               ),
               const SizedBox(width: 12),
