@@ -68,49 +68,63 @@ class CommentsController extends AsyncNotifier<CommentsState> {
 
   // create
   Future<void> createComment({
-    required String? content,
-    required List<File> files,
+    required String articleId,
+    String? imageId,
+    String? content,
     String? parentId,
+    required List<File> files,
   }) async {
-    if (_articleId == null) return;
-
     final current = state.value ?? const CommentsState();
     final service = ref.read(commentsServiceProvider);
 
-    final newComment = await service.createComment(
-      articleId: _articleId!,
-      content: content,
-      imageId: _imageId,
-      parentId: parentId,
-      files: files,
+    state = AsyncData(
+      current.copyWith(insertCommentLoading: true, insertCommentError: null),
     );
 
-    if (_imageId != null) {
-      final existing = current.imageComments[_imageId!] ?? [];
-
-      state = AsyncData(
-        current.copyWith(
-          imageComments: {
-            ...current.imageComments,
-            _imageId!: [newComment, ...existing],
-          },
-        ),
+    try {
+      final newComment = await service.createComment(
+        articleId: articleId,
+        content: content,
+        imageId: imageId,
+        parentId: parentId,
+        files: files,
       );
-    } else {
-      final existing = current.articleComments[_articleId!] ?? [];
 
+      if (imageId != null) {
+        final existing = current.imageComments[imageId] ?? [];
+
+        state = AsyncData(
+          current.copyWith(
+            imageComments: {
+              ...current.imageComments,
+              imageId: [newComment, ...existing],
+            },
+            insertCommentLoading: false,
+          ),
+        );
+      } else {
+        final existing = current.articleComments[articleId] ?? [];
+
+        state = AsyncData(
+          current.copyWith(
+            articleComments: {
+              ...current.articleComments,
+              articleId: [newComment, ...existing],
+            },
+            insertCommentLoading: false,
+          ),
+        );
+      }
+    } catch (e) {
       state = AsyncData(
         current.copyWith(
-          articleComments: {
-            ...current.articleComments,
-            _articleId!: [newComment, ...existing],
-          },
+          insertCommentLoading: false,
+          insertCommentError: e.toString(),
         ),
       );
     }
   }
 
-  // update
   // update
   Future<void> updateComment({
     required String commentId,

@@ -1,6 +1,5 @@
 import '../../../../core/models/comment_model.dart';
 
-/// State for comments
 class CommentsState {
   final bool contentLoading;
   final String? contentError;
@@ -11,19 +10,26 @@ class CommentsState {
   /// Map by imageId → List of comments
   final Map<String, List<CommentModel>> imageComments;
 
-  /// Per-comment deletion loading state
+  /// Insert state
+  final bool insertCommentLoading;
+  final String? insertCommentError;
+
+  /// Delete state
   final Map<String, bool> deleteCommentLoadingById;
   final String? deleteCommentError;
 
+  /// Update state
   final Map<String, bool> updateCommentLoadingById;
   final String? updateCommentError;
 
   const CommentsState({
     this.contentLoading = false,
     this.contentError,
-    
     this.articleComments = const {},
     this.imageComments = const {},
+
+    this.insertCommentLoading = false,
+    this.insertCommentError,
 
     this.deleteCommentLoadingById = const {},
     this.deleteCommentError,
@@ -37,8 +43,13 @@ class CommentsState {
     String? contentError,
     Map<String, List<CommentModel>>? articleComments,
     Map<String, List<CommentModel>>? imageComments,
+
+    bool? insertCommentLoading,
+    String? insertCommentError,
+
     Map<String, bool>? deleteCommentLoadingById,
     String? deleteCommentError,
+
     Map<String, bool>? updateCommentLoadingById,
     String? updateCommentError,
   }) {
@@ -49,10 +60,14 @@ class CommentsState {
       articleComments: articleComments ?? this.articleComments,
       imageComments: imageComments ?? this.imageComments,
 
+      insertCommentLoading:
+          insertCommentLoading ?? this.insertCommentLoading,
+      insertCommentError: insertCommentError,
+
       deleteCommentLoadingById:
           deleteCommentLoadingById ?? this.deleteCommentLoadingById,
       deleteCommentError: deleteCommentError,
-      
+
       updateCommentLoadingById:
           updateCommentLoadingById ?? this.updateCommentLoadingById,
       updateCommentError: updateCommentError,

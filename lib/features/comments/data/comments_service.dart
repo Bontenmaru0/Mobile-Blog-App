@@ -76,19 +76,28 @@ class CommentsService {
       uploadedUrls.add(publicUrl);
     }
 
-    final response = await _supabase.rpc(
-      'insert_comment',
-      params: {
-        'p_article_id': articleId,
-        'p_content': content,
-        'p_image_id': imageId,
-        'p_parent_id': parentId,
-        'p_comment_images': uploadedUrls,
-        'p_user_id': user.id,
-      },
-    );
+    try {
+  final response = await _supabase.rpc(
+    'insert_comment_mobile',
+    params: {
+      'p_article_id': articleId,
+      'p_content': content,
+      'p_image_id': imageId,
+      'p_parent_id': parentId,
+      'p_comment_images': uploadedUrls,
+    },
+  );
 
-    return CommentModel.fromJson(response[0]);
+  print("RPC response: $response");
+
+  return CommentModel.fromJson(response);
+} catch (e, stack) {
+  print("||||||||||| COMMENT ERROR: $e");
+  print(stack);
+  rethrow;
+}
+
+    // return CommentModel.fromJson(response[0]);
   }
 
   // update comment

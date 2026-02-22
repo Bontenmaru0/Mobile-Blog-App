@@ -1,6 +1,6 @@
 enum CommentContextType {
   article,
-  image,
+  comment,
   // profile, future plan
   // message, future plan
 }

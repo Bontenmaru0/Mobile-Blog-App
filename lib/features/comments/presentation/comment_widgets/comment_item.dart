@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/comment_model.dart';
-import '../../../comments/state/comments_controller.dart';
-import '../image_widgets/app_image_grid.dart';
-import '../image_widgets/image_gallery_page.dart';
+import '../../state/comments_controller.dart';
+import '../../../../shared/widgets/image/comment_image_grid.dart';
 import '../../../../core/constants/time_ago.dart';
 
 class CommentItem extends ConsumerWidget {
@@ -14,7 +13,7 @@ class CommentItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(commentsControllerProvider);
-    final isEdited = comment.updatedAt != null;
+    final isEdited = comment.status == 'edited';
 
     final isUpdating =
         state.value?.updateCommentLoadingById[comment.id] ?? false;
@@ -28,7 +27,7 @@ class CommentItem extends ConsumerWidget {
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.zero,
-            border: Border.all(color: Colors.black)
+            border: Border.all(color: Colors.black),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -54,27 +53,13 @@ class CommentItem extends ConsumerWidget {
 
               const SizedBox(height: 6),
 
-              AppImageGrid(
-                images: comment.images,
-                onImageTap: (imageUrl, index) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ImageGalleryPage(
-                        images: comment.images,
-                        initialIndex: index,
-                      ),
-                    ),
-                  );
-                },
-              ),
+              if (comment.images.isNotEmpty)
+                CommentImageGrid(images: comment.images),
 
-              if (comment.content != null && comment.content!.trim().isNotEmpty) ...[
+              if (comment.content != null &&
+                  comment.content!.trim().isNotEmpty) ...[
                 const SizedBox(height: 6),
-                Text(
-                  comment.content!,
-                  style: const TextStyle(fontSize: 14),
-                ),
+                Text(comment.content!, style: const TextStyle(fontSize: 14)),
               ],
 
               const SizedBox(height: 6),

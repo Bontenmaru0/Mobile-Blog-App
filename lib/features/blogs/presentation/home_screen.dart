@@ -6,11 +6,11 @@ import '../../../shared/widgets/nav_user_menu.dart';
 import '../../blogs/state/blogs_controller.dart';
 import 'article_widgets/article_image_grid.dart';
 import '../../../core/constants/time_ago.dart';
-import 'image_widgets/image_gallery_page.dart';
+import '../../../shared/widgets/image/image_gallery_page.dart';
 import 'article_widgets/create_article.dart';
 import 'article_widgets/update_article.dart';
 import '../../../shared/widgets/app_refresh.dart';
-import 'comment_widgets/comment_panel.dart';
+import '../../comments/presentation/comment_widgets/comment_panel.dart';
 import '../../../core/enums/comment_context_type.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
@@ -57,7 +57,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.zero), // sharp top
+        borderRadius: BorderRadius.vertical(top: Radius.zero),
       ),
       builder: (context) {
         return DraggableScrollableSheet(
@@ -393,11 +393,16 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                                       .deleteArticle(
                                                                         id: article
                                                                             .id,
-                                                                        removedImages:
-                                                                            article.images,
+                                                                        removedImages: article
+                                                                            .images
+                                                                            .map(
+                                                                              (
+                                                                                img,
+                                                                              ) => img.imageUrl,
+                                                                            )
+                                                                            .toList(),
                                                                       );
 
-                                                                  // optional: refetch if using pagination
                                                                   _fetch();
                                                                 },
                                                                 child: const Text(
@@ -436,16 +441,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
                                             // Image grid
                                             ArticleImageGrid(
-                                              images: article.images,
+                                              images: article.images
+                                                  .map((img) => img.imageUrl)
+                                                  .toList(),
                                               onImageClick: (imageUrl, index) {
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (_) =>
                                                         ImageGalleryPage(
-                                                          images: article
-                                                              .images, // all images
+                                                          images: article.images
+                                                              .map(
+                                                                (img) => img
+                                                                    .imageUrl,
+                                                              )
+                                                              .toList(),
                                                           initialIndex: index,
+                                                          articleId: article.id,
+                                                          imageId: article
+                                                              .images[index]
+                                                              .id,
                                                         ),
                                                   ),
                                                 );

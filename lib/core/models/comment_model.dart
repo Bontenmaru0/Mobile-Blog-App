@@ -6,7 +6,7 @@ class CommentModel {
   final String authorName;
   final String? parentId;
   final String? content;
-  final String status;
+  final String? status;
   final DateTime createdAt;
   final DateTime? updatedAt;
   final int depth;
@@ -37,7 +37,7 @@ class CommentModel {
     return CommentModel(
       id: json['id'],
       articleId: json['article_id'],
-      imageId: json['image_id'],
+      imageId: json['image_id'] ?? '',
       userId: json['user_id'],
       authorName: json['author_name'],
       parentId: json['parent_id'],

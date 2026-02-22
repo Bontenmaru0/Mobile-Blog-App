@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/comment_model.dart';
-import '../../../comments/state/comments_controller.dart';
+import '../../state/comments_controller.dart';
 import 'comment_item.dart';
 
 class CommentList extends ConsumerWidget {
