@@ -6,6 +6,7 @@ import '../../state/blogs_controller.dart';
 import '../../../profiles/state/profiles_controller.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/models/blog_model.dart';
+import '../../../../core/models/image_model.dart';
 
 class UpdateArticleScreen extends ConsumerStatefulWidget {
   final ArticleModel article;
@@ -13,7 +14,8 @@ class UpdateArticleScreen extends ConsumerStatefulWidget {
   const UpdateArticleScreen({super.key, required this.article});
 
   @override
-  ConsumerState<UpdateArticleScreen> createState() => _UpdateArticleScreenState();
+  ConsumerState<UpdateArticleScreen> createState() =>
+      _UpdateArticleScreenState();
 }
 
 class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
@@ -25,7 +27,7 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
   final ImagePicker _picker = ImagePicker();
   List<File> selectedImages = [];
 
-  List<String> existingImages = [];
+  List<ImageModel> existingImages = [];
   List<String> removedImages = [];
 
   @override
@@ -54,8 +56,9 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
   }
 
   void removeExistingImage(int index) {
+    final removed = existingImages[index];
     setState(() {
-      removedImages.add(existingImages[index]);
+      removedImages.add(removed.imageUrl);
       existingImages.removeAt(index);
     });
   }
@@ -217,18 +220,18 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                 if (existingImages.isNotEmpty)
                   SizedBox(
                     height: 100,
-                    child: ListView.builder(
+                    child: ListView(
                       scrollDirection: Axis.horizontal,
-                      itemCount: existingImages.length,
-                      itemBuilder: (context, index) {
+                      children: existingImages.map((img) {
                         return Stack(
+                          key: ValueKey(img.id),
                           children: [
                             Container(
                               margin: const EdgeInsets.only(right: 8),
                               width: 100,
                               height: 100,
                               child: Image.network(
-                                existingImages[index],
+                                img.imageUrl,
                                 fit: BoxFit.cover,
                               ),
                             ),
@@ -236,7 +239,14 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                               right: 8,
                               top: 4,
                               child: GestureDetector(
-                                onTap: () => removeExistingImage(index),
+                                onTap: () {
+                                  setState(() {
+                                    removedImages.add(img.imageUrl);
+                                    existingImages.removeWhere(
+                                      (e) => e.id == img.id,
+                                    );
+                                  });
+                                },
                                 child: const CircleAvatar(
                                   radius: 12,
                                   backgroundColor: Colors.black,
@@ -250,33 +260,34 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                             ),
                           ],
                         );
-                      },
+                      }).toList(),
                     ),
                   ),
 
                 if (selectedImages.isNotEmpty)
                   SizedBox(
                     height: 100,
-                    child: ListView.builder(
+                    child: ListView(
                       scrollDirection: Axis.horizontal,
-                      itemCount: selectedImages.length,
-                      itemBuilder: (context, index) {
+                      children: selectedImages.map((file) {
                         return Stack(
+                          key: ValueKey(file.path),
                           children: [
                             Container(
                               margin: const EdgeInsets.only(right: 8),
                               width: 100,
                               height: 100,
-                              child: Image.file(
-                                selectedImages[index],
-                                fit: BoxFit.cover,
-                              ),
+                              child: Image.file(file, fit: BoxFit.cover),
                             ),
                             Positioned(
                               right: 8,
                               top: 4,
                               child: GestureDetector(
-                                onTap: () => removeImage(index),
+                                onTap: () {
+                                  setState(() {
+                                    selectedImages.remove(file);
+                                  });
+                                },
                                 child: const CircleAvatar(
                                   radius: 12,
                                   backgroundColor: Colors.black,
@@ -290,7 +301,7 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                             ),
                           ],
                         );
-                      },
+                      }).toList(),
                     ),
                   ),
 
