@@ -2,13 +2,13 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../../blogs/state/blogs_controller.dart';
+import '../../state/blogs_controller.dart';
 import '../../../profiles/state/profiles_controller.dart';
 import '../../../../core/utils/app_snackbar.dart';
-import '../../../../core/models/blogs_model.dart';
+import '../../../../core/models/blog_model.dart';
 
 class UpdateArticleScreen extends ConsumerStatefulWidget {
-  final Article article;
+  final ArticleModel article;
 
   const UpdateArticleScreen({super.key, required this.article});
 

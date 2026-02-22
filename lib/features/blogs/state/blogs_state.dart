@@ -1,7 +1,8 @@
-import '../../../core/models/blogs_model.dart';
+import '../../../core/models/blog_model.dart';
 
+/// State for blogs (articles)
 class ArticlesState {
-  final List<Article> articles;
+  final List<ArticleModel> articles;
   final int total;
   final bool contentLoading;
   final String? blogError;
@@ -15,6 +16,7 @@ class ArticlesState {
   final Map<String, bool> deleteArticleLoadingById;
   final String? deleteArticleError;
 
+  // Constructor with default values
   const ArticlesState({
     this.articles = const [],
     this.total = 0,
@@ -28,8 +30,9 @@ class ArticlesState {
     this.deleteArticleError,
   });
 
+  // CopyWith method for immutability
   ArticlesState copyWith({
-    List<Article>? articles,
+    List<ArticleModel>? articles,
     int? total,
     bool? contentLoading,
     String? blogError,

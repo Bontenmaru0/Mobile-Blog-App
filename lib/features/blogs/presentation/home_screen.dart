@@ -4,12 +4,14 @@ import '../../auth/state/auth_controller.dart';
 import '../../profiles/state/profiles_controller.dart';
 import '../../../shared/widgets/nav_user_menu.dart';
 import '../../blogs/state/blogs_controller.dart';
-import '../../blogs/presentation/widgets/article_image_grid.dart';
+import 'article_widgets/article_image_grid.dart';
 import '../../../core/constants/time_ago.dart';
-import 'widgets/image_gallery_page.dart';
-import 'widgets/create_article.dart';
-import 'widgets/update_article.dart';
+import 'image_widgets/image_gallery_page.dart';
+import 'article_widgets/create_article.dart';
+import 'article_widgets/update_article.dart';
 import '../../../shared/widgets/app_refresh.dart';
+import 'comment_widgets/comment_panel.dart';
+import '../../../core/enums/comment_context_type.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -78,20 +80,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                   ),
-                  Text(
-                    'Comments for $articleId',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Article Comments',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ),
+                  // Text(
+                  //   'Comments for $articleId',
+                  //   style: const TextStyle(
+                  //     fontWeight: FontWeight.bold,
+                  //     fontSize: 16,
+                  //   ),
+                  // ),
                   const SizedBox(height: 20),
                   Expanded(
-                    child: Center(
-                      child: Text(
-                        'Comments content goes here...',
-                        style: TextStyle(color: Colors.grey[500]),
-                      ),
+                    child: CommentPanel(
+                      articleId: articleId,
+                      type: CommentContextType.article,
                     ),
                   ),
                 ],
@@ -269,216 +279,220 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                 child: Text("No available articles."),
                               )
                             : AppRefreshWrapper(
-                            onRefresh: () async {
-                              setState(() {
-                                page = 1; // reset to first page on pull
-                              });
-                              await _fetch();
-                            },
-                            child: ListView.builder(
-                                itemCount: blogState.articles.length,
-                                itemBuilder: (context, index) {
-                                  final article = blogState.articles[index];
-                                  final isDeleting =
-                                      blogState.deleteArticleLoadingById[article
-                                          .id] ??
-                                      false;
+                                onRefresh: () async {
+                                  setState(() {
+                                    page = 1; // reset to first page on pull
+                                  });
+                                  await _fetch();
+                                },
+                                child: ListView.builder(
+                                  itemCount: blogState.articles.length,
+                                  itemBuilder: (context, index) {
+                                    final article = blogState.articles[index];
+                                    final isDeleting =
+                                        blogState
+                                            .deleteArticleLoadingById[article
+                                            .id] ??
+                                        false;
 
-                                  return Card(
-                                    color: Colors.white,
-                                    elevation: 0,
-                                    shape: const RoundedRectangleBorder(
-                                      side: BorderSide(
-                                        color: Colors.black,
-                                        width: 1,
+                                    return Card(
+                                      color: Colors.white,
+                                      elevation: 0,
+                                      shape: const RoundedRectangleBorder(
+                                        side: BorderSide(
+                                          color: Colors.black,
+                                          width: 1,
+                                        ),
+                                        borderRadius: BorderRadius.zero,
                                       ),
-                                      borderRadius: BorderRadius.zero,
-                                    ),
-                                    margin: const EdgeInsets.only(bottom: 27),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12),
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  article.title,
-                                                  style: const TextStyle(
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold,
+                                      margin: const EdgeInsets.only(bottom: 27),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(12),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    article.title,
+                                                    style: const TextStyle(
+                                                      fontSize: 18,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
                                                   ),
                                                 ),
-                                              ),
 
-                                              // 3 dots menu
-                                              if (user !=
-                                                  null) // optional: only show if logged in
-                                                PopupMenuButton<String>(
-                                                  icon: isDeleting
-                                                      ? const SizedBox(
-                                                          width: 20,
-                                                          height: 20,
-                                                          child:
-                                                              CircularProgressIndicator(
-                                                                strokeWidth: 2,
-                                                              ),
-                                                        )
-                                                      : const Icon(
-                                                          Icons.more_vert,
-                                                        ),
-                                                  onSelected: (value) {
-                                                    if (value == 'edit') {
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (_) =>
-                                                              UpdateArticleScreen(
-                                                                article:
-                                                                    article,
-                                                              ),
-                                                        ),
-                                                      );
-                                                      // TODO: Navigate to edit screen
-                                                    } else if (value ==
-                                                        'delete') {
-                                                      showDialog(
-                                                        context: context,
-                                                        builder: (context) => AlertDialog(
-                                                          title: const Text(
-                                                            "Delete Article",
+                                                // 3 dots menu
+                                                if (user !=
+                                                    null) // optional: only show if logged in
+                                                  PopupMenuButton<String>(
+                                                    icon: isDeleting
+                                                        ? const SizedBox(
+                                                            width: 20,
+                                                            height: 20,
+                                                            child:
+                                                                CircularProgressIndicator(
+                                                                  strokeWidth:
+                                                                      2,
+                                                                ),
+                                                          )
+                                                        : const Icon(
+                                                            Icons.more_vert,
                                                           ),
-                                                          content: const Text(
-                                                            "Are you sure you want to delete this article?",
+                                                    onSelected: (value) {
+                                                      if (value == 'edit') {
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (_) =>
+                                                                UpdateArticleScreen(
+                                                                  article:
+                                                                      article,
+                                                                ),
                                                           ),
-                                                          actions: [
-                                                            TextButton(
-                                                              onPressed: () =>
+                                                        );
+                                                        // TODO: Navigate to edit screen
+                                                      } else if (value ==
+                                                          'delete') {
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (context) => AlertDialog(
+                                                            title: const Text(
+                                                              "Delete Article",
+                                                            ),
+                                                            content: const Text(
+                                                              "Are you sure you want to delete this article?",
+                                                            ),
+                                                            actions: [
+                                                              TextButton(
+                                                                onPressed: () =>
+                                                                    Navigator.pop(
+                                                                      context,
+                                                                    ),
+                                                                child:
+                                                                    const Text(
+                                                                      "Cancel",
+                                                                    ),
+                                                              ),
+                                                              TextButton(
+                                                                onPressed: () async {
                                                                   Navigator.pop(
                                                                     context,
+                                                                  );
+
+                                                                  await ref
+                                                                      .read(
+                                                                        blogsControllerProvider
+                                                                            .notifier,
+                                                                      )
+                                                                      .deleteArticle(
+                                                                        id: article
+                                                                            .id,
+                                                                        removedImages:
+                                                                            article.images,
+                                                                      );
+
+                                                                  // optional: refetch if using pagination
+                                                                  _fetch();
+                                                                },
+                                                                child: const Text(
+                                                                  "Delete",
+                                                                  style: TextStyle(
+                                                                    color: Colors
+                                                                        .red,
                                                                   ),
-                                                              child: const Text(
-                                                                "Cancel",
-                                                              ),
-                                                            ),
-                                                            TextButton(
-                                                              onPressed: () async {
-                                                                Navigator.pop(
-                                                                  context,
-                                                                );
-
-                                                                await ref
-                                                                    .read(
-                                                                      blogsControllerProvider
-                                                                          .notifier,
-                                                                    )
-                                                                    .deleteArticle(
-                                                                      id: article
-                                                                          .id,
-                                                                      removedImages:
-                                                                          article
-                                                                              .images,
-                                                                    );
-
-                                                                // optional: refetch if using pagination
-                                                                _fetch();
-                                                              },
-                                                              child: const Text(
-                                                                "Delete",
-                                                                style: TextStyle(
-                                                                  color: Colors
-                                                                      .red,
                                                                 ),
                                                               ),
+                                                            ],
+                                                          ),
+                                                        );
+                                                      }
+                                                    },
+                                                    itemBuilder: (context) =>
+                                                        const [
+                                                          PopupMenuItem(
+                                                            value: 'edit',
+                                                            child: Text("Edit"),
+                                                          ),
+                                                          PopupMenuItem(
+                                                            value: 'delete',
+                                                            child: Text(
+                                                              "Delete",
                                                             ),
-                                                          ],
-                                                        ),
-                                                      );
-                                                    }
-                                                  },
-                                                  itemBuilder: (context) =>
-                                                      const [
-                                                        PopupMenuItem(
-                                                          value: 'edit',
-                                                          child: Text("Edit"),
-                                                        ),
-                                                        PopupMenuItem(
-                                                          value: 'delete',
-                                                          child: Text("Delete"),
-                                                        ),
-                                                      ],
-                                                ),
-                                            ],
-                                          ),
-
-                                          const SizedBox(height: 8),
-                                          Text(article.content),
-                                          const SizedBox(height: 12),
-
-                                          // Image grid
-                                          ArticleImageGrid(
-                                            images: article.images,
-                                            onImageClick: (imageUrl, index) {
-                                              Navigator.push(
-                                                context,
-                                                MaterialPageRoute(
-                                                  builder: (_) =>
-                                                      ImageGalleryPage(
-                                                        images: article
-                                                            .images, // all images
-                                                        initialIndex: index,
-                                                      ),
-                                                ),
-                                              );
-                                            },
-                                          ),
-
-                                          const SizedBox(height: 8),
-
-                                          //meta info
-                                          Text(
-                                            'Published by ${article.fullName ?? 'Unknown'} • ${timeAgo(article.createdAt)}',
-                                            style: const TextStyle(
-                                              color: Colors.grey,
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                          const SizedBox(height: 8),
-                                          // comment button
-                                          InkWell(
-                                            onTap: () =>
-                                                _openCommentPanel(article.id),
-                                            child: Container(
-                                              width: double.infinity,
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                    vertical: 8,
+                                                          ),
+                                                        ],
                                                   ),
-                                              decoration: BoxDecoration(
-                                                color: Colors
-                                                    .grey[200], // light background like FB modal handle
-                                                borderRadius:
-                                                    BorderRadius.circular(0),
-                                              ),
-                                              child: const Icon(
-                                                Icons.comment_outlined,
-                                                size: 28,
-                                                color: Colors.black54,
+                                              ],
+                                            ),
+
+                                            const SizedBox(height: 8),
+                                            Text(article.content),
+                                            const SizedBox(height: 12),
+
+                                            // Image grid
+                                            ArticleImageGrid(
+                                              images: article.images,
+                                              onImageClick: (imageUrl, index) {
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (_) =>
+                                                        ImageGalleryPage(
+                                                          images: article
+                                                              .images, // all images
+                                                          initialIndex: index,
+                                                        ),
+                                                  ),
+                                                );
+                                              },
+                                            ),
+
+                                            const SizedBox(height: 8),
+
+                                            //meta info
+                                            Text(
+                                              'Published by ${article.fullName ?? 'Unknown'} • ${timeAgo(article.createdAt)}',
+                                              style: const TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 12,
                                               ),
                                             ),
-                                          ),
-                                        ],
+                                            const SizedBox(height: 8),
+                                            // comment button
+                                            InkWell(
+                                              onTap: () =>
+                                                  _openCommentPanel(article.id),
+                                              child: Container(
+                                                width: double.infinity,
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      vertical: 8,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors
+                                                      .grey[200], // light background like FB modal handle
+                                                  borderRadius:
+                                                      BorderRadius.circular(0),
+                                                ),
+                                                child: const Icon(
+                                                  Icons.comment_outlined,
+                                                  size: 28,
+                                                  color: Colors.black54,
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  );
-                                  
-                                },
+                                    );
+                                  },
+                                ),
                               ),
-                            ),
                       ),
 
                       // pagination

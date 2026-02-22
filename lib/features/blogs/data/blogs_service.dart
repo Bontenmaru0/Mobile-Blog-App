@@ -1,13 +1,13 @@
 import 'dart:io';
 import '../../../core/services/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../../core/models/blogs_model.dart';
+import '../../../core/models/blog_model.dart';
 
 class BlogsService {
   final SupabaseClient _supabase = SupabaseService.client;
 
   //fetch
-  Future<(List<Article>, int)> fetchBlogs({
+  Future<(List<ArticleModel>, int)> fetchBlogs({
     int limit = 5,
     int page = 1,
     String? search,
@@ -29,7 +29,7 @@ class BlogsService {
     final total = (response['total'] as num?)?.toInt() ?? 0;
 
     final articles =
-        data.map((e) => Article.fromJson(e)).toList();
+        data.map((e) => ArticleModel.fromJson(e)).toList();
 
         print(articles);
 
@@ -37,7 +37,7 @@ class BlogsService {
   }
 
   // create
-  Future<Article> createArticle({
+  Future<ArticleModel> createArticle({
     required String title,
     required String content,
     required List<File> files,
@@ -75,11 +75,11 @@ class BlogsService {
       },
     );
 
-    return Article.fromJson(response[0]);
+    return ArticleModel.fromJson(response[0]);
   }
 
   // update
-  Future<Article> updateArticle({
+  Future<ArticleModel> updateArticle({
     required String articleId,
     required String title,
     required String content,
@@ -130,7 +130,7 @@ class BlogsService {
       },
     );
 
-    return Article.fromJson(response[0]);
+    return ArticleModel.fromJson(response[0]);
   }
 
   // delete

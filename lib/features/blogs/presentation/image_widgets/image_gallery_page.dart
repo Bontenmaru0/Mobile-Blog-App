@@ -93,7 +93,6 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
             child: Center(
               child: GestureDetector(
                 onTap: () {
-                  // open comment panel or modal
                   showModalBottomSheet(
                     context: context,
                     isScrollControlled: true,

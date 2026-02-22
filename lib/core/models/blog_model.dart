@@ -1,4 +1,4 @@
-class Article {
+class ArticleModel {
   final String id;
   final String title;
   final String content;
@@ -6,7 +6,7 @@ class Article {
   final DateTime createdAt;
   final String? fullName;
 
-  Article({
+  ArticleModel({
     required this.id,
     required this.title,
     required this.content,
@@ -15,8 +15,8 @@ class Article {
     this.fullName,
   });
 
-  factory Article.fromJson(Map<String, dynamic> json) {
-  return Article(
+  factory ArticleModel.fromJson(Map<String, dynamic> json) {
+  return ArticleModel(
     id: json['id'],
     title: json['title'],
     content: json['content'],
