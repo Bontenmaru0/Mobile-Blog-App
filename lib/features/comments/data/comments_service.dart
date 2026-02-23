@@ -10,20 +10,17 @@ class CommentsService {
   Future<List<CommentModel>> fetchArticleComments({
     required String articleId,
   }) async {
-    final response = await _supabase.rpc(
-      'get_article_comments',
-      params: {
-        'p_article_id': articleId,
-      },
-    );
+    try {
+      final response = await _supabase.rpc(
+        'get_article_comments',
+        params: {'p_article_id': articleId},
+      );
 
-    final data = response as List? ?? [];
-
-  // for (final item in data) {
-  //   print('RAW COMMENT JSON: $item');
-  // }
-
-    return data.map((e) => CommentModel.fromJson(e)).toList();
+      final data = response as List? ?? [];
+      return data.map((e) => CommentModel.fromJson(e)).toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // fetch image comments
@@ -31,17 +28,20 @@ class CommentsService {
     required String articleId,
     required String imageId,
   }) async {
-    final response = await _supabase.rpc(
-      'get_images_comments',
-      params: {
-        'p_article_id': articleId,
-        'p_image_id': imageId,
-      },
-    );
+    try {
+      final response = await _supabase.rpc(
+        'get_images_comments',
+        params: {
+          'p_article_id': articleId,
+          'p_image_id': imageId,
+        },
+      );
 
-    final data = response as List? ?? [];
-
-    return data.map((e) => CommentModel.fromJson(e)).toList();
+      final data = response as List? ?? [];
+      return data.map((e) => CommentModel.fromJson(e)).toList();
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // create comment
@@ -52,52 +52,44 @@ class CommentsService {
     String? parentId,
     required List<File> files,
   }) async {
-    final user = _supabase.auth.currentUser;
-    if (user == null) {
-      throw Exception('User not logged in');
-    }
-
-    List<String> uploadedUrls = [];
-
-    // upload multiple images
-    for (final file in files) {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final path = 'comments/$fileName';
-
-      await _supabase.storage
-          .from('comment_images')
-          .upload(path, file);
-
-      final publicUrl = _supabase.storage
-          .from('comment_images')
-          .getPublicUrl(path);
-
-      uploadedUrls.add(publicUrl);
-    }
-
     try {
-  final response = await _supabase.rpc(
-    'insert_comment_mobile',
-    params: {
-      'p_article_id': articleId,
-      'p_content': content,
-      'p_image_id': imageId,
-      'p_parent_id': parentId,
-      'p_comment_images': uploadedUrls,
-    },
-  );
+      final user = _supabase.auth.currentUser;
+      if (user == null) throw Exception('User not logged in');
 
-  print("RPC response: $response");
+      List<String> uploadedUrls = [];
 
-  return CommentModel.fromJson(response);
-} catch (e, stack) {
-  print("||||||||||| COMMENT ERROR: $e");
-  print(stack);
-  rethrow;
-}
+      // upload multiple images
+      for (final file in files) {
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final path = 'comments/$fileName';
 
-    // return CommentModel.fromJson(response[0]);
+        await _supabase.storage.from('comment_images').upload(path, file);
+        final publicUrl = _supabase.storage.from('comment_images').getPublicUrl(path);
+        uploadedUrls.add(publicUrl);
+      }
+
+      final response = await _supabase.rpc(
+        'insert_comment_mobile',
+        params: {
+          'p_article_id': articleId,
+          'p_content': content,
+          'p_image_id': imageId,
+          'p_parent_id': parentId,
+          'p_comment_images': uploadedUrls,
+        },
+      );
+
+      if (response is List && response.isNotEmpty) {
+        return CommentModel.fromJson(Map<String, dynamic>.from(response[0]));
+      } else if (response is Map) {
+        return CommentModel.fromJson(Map<String, dynamic>.from(response));
+      } else {
+        throw Exception('Unexpected RPC response format');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
   // update comment
@@ -106,51 +98,62 @@ class CommentsService {
     String? content,
     required List<File> newFiles,
     required List<String> removedImages,
+    String status = 'edited',
+    String? articleId,
   }) async {
-    List<String> newUploadedUrls = [];
+    try {
+      List<String> newUploadedUrls = [];
 
-    // Upload new images
-    for (final file in newFiles) {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
-      final path = 'comments/$commentId/$fileName';
+      // Upload new images
+      for (final file in newFiles) {
+        final fileName =
+            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final path = 'comments/$commentId/$fileName';
 
-      await _supabase.storage
-          .from('comment_images')
-          .upload(path, file);
-
-      final publicUrl = _supabase.storage
-          .from('comment_images')
-          .getPublicUrl(path);
-
-      newUploadedUrls.add(publicUrl);
-    }
-
-    // remove deleted images from storage
-    if (removedImages.isNotEmpty) {
-      final paths = removedImages
-          .map(_getCommentImagePath)
-          .whereType<String>()
-          .toList();
-
-      if (paths.isNotEmpty) {
-        await _supabase.storage
-            .from('comment_images')
-            .remove(paths);
+        await _supabase.storage.from('comment_images').upload(path, file);
+        final publicUrl = _supabase.storage.from('comment_images').getPublicUrl(path);
+        newUploadedUrls.add(publicUrl);
       }
+
+      // Remove deleted images from storage (paths only)
+      if (removedImages.isNotEmpty) {
+        final paths = removedImages
+            .map(_getCommentImagePath)
+            .whereType<String>()
+            .toList();
+
+        if (paths.isNotEmpty) {
+          await _supabase.storage.from('comment_images').remove(paths);
+        }
+      }
+
+      // Call RPC to update comment (DB removal uses full image URL)
+      final response = await _supabase.rpc(
+        'update_comment_mobile',
+        params: {
+          'p_comment_id': commentId,
+          'p_content': content,
+          'p_status': status,
+          'p_new_images': newUploadedUrls,
+          'p_removed_images': removedImages, // full URLs
+          'p_article_id': articleId,
+        },
+      );
+
+      print("Update RPC response: $response");
+
+      if (response is List && response.isNotEmpty) {
+        return CommentModel.fromJson(Map<String, dynamic>.from(response[0]));
+      } else if (response is Map) {
+        return CommentModel.fromJson(Map<String, dynamic>.from(response));
+      } else {
+        throw Exception('Unexpected RPC response format');
+      }
+    } catch (e, stack) {
+      print("UPDATE ||||||||||| UPDATE COMMENT ERROR: $e");
+      print(stack);
+      rethrow;
     }
-
-    final response = await _supabase.rpc(
-      'update_comment',
-      params: {
-        'p_comment_id': commentId,
-        'p_content': content,
-        'p_new_images': newUploadedUrls,
-        'p_removed_images': removedImages,
-      },
-    );
-
-    return CommentModel.fromJson(response[0]);
   }
 
   // delete comment
@@ -158,28 +161,25 @@ class CommentsService {
     required String commentId,
     required List<String> removedImages,
   }) async {
-    // remove images from storage
-    if (removedImages.isNotEmpty) {
-      final paths = removedImages
-          .map(_getCommentImagePath)
-          .whereType<String>()
-          .toList();
+    try {
+      if (removedImages.isNotEmpty) {
+        final paths = removedImages
+            .map(_getCommentImagePath)
+            .whereType<String>()
+            .toList();
 
-      if (paths.isNotEmpty) {
-        await _supabase.storage
-            .from('comment_images')
-            .remove(paths);
+        if (paths.isNotEmpty) {
+          await _supabase.storage.from('comment_images').remove(paths);
+        }
       }
+
+      await _supabase.rpc('delete_comment', params: {'p_comment_id': commentId});
+      return commentId;
+    } catch (e, stack) {
+      print("UPDATE ||||||||||| DELETE COMMENT ERROR: $e");
+      print(stack);
+      rethrow;
     }
-
-    await _supabase.rpc(
-      'delete_comment',
-      params: {
-        'p_comment_id': commentId,
-      },
-    );
-
-    return commentId;
   }
 
   // helper to extract storage path from public URL

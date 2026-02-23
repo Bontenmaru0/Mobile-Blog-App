@@ -35,22 +35,22 @@ class CommentModel {
 
   factory CommentModel.fromJson(Map<String, dynamic> json) {
     return CommentModel(
-      id: json['id'],
-      articleId: json['article_id'],
-      imageId: json['image_id'] ?? '',
-      userId: json['user_id'],
-      authorName: json['author_name'],
-      parentId: json['parent_id'],
-      content: json['content'] ?? '',
-      status: json['status'] ?? '',
-      createdAt: DateTime.parse(json['created_at']),
+      id: json['id'] as String,
+      articleId: json['article_id'] as String,
+      imageId: json['image_id'] as String?, // nullable
+      userId: json['user_id'] as String,
+      authorName: json['author_name'] as String,
+      parentId: json['parent_id'] as String?,
+      content: json['content'] as String?, // nullable
+      status: json['status'] as String?, // nullable
+      createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: json['updated_at'] != null
-          ? DateTime.parse(json['updated_at'])
+          ? DateTime.parse(json['updated_at'] as String)
           : null,
-      depth: json['depth'],
+      depth: json['depth'] as int,
       replyCount: json['coalesce'] ?? json['reply_count'] ?? 0,
-      totalArticleComments: json['total_article_comments'],
-      totalImageComments: json['total_image_comments'],
+      totalArticleComments: json['total_article_comments'] as int,
+      totalImageComments: json['total_image_comments'] as int,
       images:
           (json['image'] as List<dynamic>?)
               ?.map((img) => img['image_url'] as String)

@@ -163,7 +163,7 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
                 height: 60,
                 child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
               ),
-              error: (_, __) => const SizedBox.shrink(),
+              error: (e, st) => const SizedBox.shrink(),
               data: (user) {
                 if (user == null) {
                   return Container(

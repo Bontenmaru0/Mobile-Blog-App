@@ -356,7 +356,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                                 ),
                                                           ),
                                                         );
-                                                        // TODO: Navigate to edit screen
                                                       } else if (value ==
                                                           'delete') {
                                                         showDialog(

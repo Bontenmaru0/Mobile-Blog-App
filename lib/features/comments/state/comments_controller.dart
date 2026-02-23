@@ -8,8 +8,8 @@ final commentsServiceProvider = Provider((ref) => CommentsService());
 
 final commentsControllerProvider =
     AsyncNotifierProvider<CommentsController, CommentsState>(
-      CommentsController.new,
-    );
+  CommentsController.new,
+);
 
 class CommentsController extends AsyncNotifier<CommentsState> {
   String? _articleId;
@@ -20,7 +20,7 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     return const CommentsState();
   }
 
-  // fetch
+  // fetch either article | specific image
   Future<void> fetchComments({
     required String articleId,
     String? imageId,
@@ -44,24 +44,35 @@ class CommentsController extends AsyncNotifier<CommentsState> {
             )
           : await service.fetchArticleComments(articleId: articleId);
 
+      final latest = state.value ?? current;
+
       if (imageId != null) {
         state = AsyncData(
-          current.copyWith(
-            imageComments: {...current.imageComments, imageId: comments},
+          latest.copyWith(
+            imageComments: {
+              ...latest.imageComments,
+              imageId: comments,
+            },
             contentLoading: false,
           ),
         );
       } else {
         state = AsyncData(
-          current.copyWith(
-            articleComments: {...current.articleComments, articleId: comments},
+          latest.copyWith(
+            articleComments: {
+              ...latest.articleComments,
+              articleId: comments,
+            },
             contentLoading: false,
           ),
         );
       }
     } catch (e) {
       state = AsyncData(
-        current.copyWith(contentLoading: false, contentError: e.toString()),
+        current.copyWith(
+          contentLoading: false,
+          contentError: e.toString(),
+        ),
       );
     }
   }
@@ -78,7 +89,10 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     final service = ref.read(commentsServiceProvider);
 
     state = AsyncData(
-      current.copyWith(insertCommentLoading: true, insertCommentError: null),
+      current.copyWith(
+        insertCommentLoading: true,
+        insertCommentError: null,
+      ),
     );
 
     try {
@@ -90,25 +104,27 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         files: files,
       );
 
+      final latest = state.value ?? current;
+
       if (imageId != null) {
-        final existing = current.imageComments[imageId] ?? [];
+        final existing = latest.imageComments[imageId] ?? [];
 
         state = AsyncData(
-          current.copyWith(
+          latest.copyWith(
             imageComments: {
-              ...current.imageComments,
+              ...latest.imageComments,
               imageId: [newComment, ...existing],
             },
             insertCommentLoading: false,
           ),
         );
       } else {
-        final existing = current.articleComments[articleId] ?? [];
+        final existing = latest.articleComments[articleId] ?? [];
 
         state = AsyncData(
-          current.copyWith(
+          latest.copyWith(
             articleComments: {
-              ...current.articleComments,
+              ...latest.articleComments,
               articleId: [newComment, ...existing],
             },
             insertCommentLoading: false,
@@ -135,7 +151,6 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     final current = state.value ?? const CommentsState();
     final service = ref.read(commentsServiceProvider);
 
-    // Set per-comment loading true
     state = AsyncData(
       current.copyWith(
         updateCommentLoadingById: {
@@ -154,25 +169,40 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         removedImages: removedImages,
       );
 
-      // Replace the updated comment in the current list
-      final updatedList = _getCurrentList(
-        current,
-      ).map((c) => c.id == commentId ? updatedComment : c).toList();
+      final latest = state.value ?? current;
 
-      // Reset per-comment loading false
-      state = AsyncData(
-        current.copyWith(
-          updateCommentLoadingById: {
-            ...current.updateCommentLoadingById,
-            commentId: false,
-          },
-        ),
-      );
+      final updatedList = _getCurrentList(latest)
+          .map((c) => c.id == commentId ? updatedComment : c)
+          .toList();
 
-      // Set updated list
-      _setUpdatedList(current, updatedList);
+      if (_imageId != null) {
+        state = AsyncData(
+          latest.copyWith(
+            imageComments: {
+              ...latest.imageComments,
+              _imageId!: updatedList,
+            },
+            updateCommentLoadingById: {
+              ...latest.updateCommentLoadingById,
+              commentId: false,
+            },
+          ),
+        );
+      } else {
+        state = AsyncData(
+          latest.copyWith(
+            articleComments: {
+              ...latest.articleComments,
+              _articleId!: updatedList,
+            },
+            updateCommentLoadingById: {
+              ...latest.updateCommentLoadingById,
+              commentId: false,
+            },
+          ),
+        );
+      }
     } catch (e) {
-      // Error case: reset loading and set error
       state = AsyncData(
         current.copyWith(
           updateCommentLoadingById: {
@@ -191,8 +221,8 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     required List<String> removedImages,
   }) async {
     final current = state.value ?? const CommentsState();
+    final service = ref.read(commentsServiceProvider);
 
-    // set per-item loading true
     state = AsyncData(
       current.copyWith(
         deleteCommentLoadingById: {
@@ -203,27 +233,44 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     );
 
     try {
-      final service = ref.read(commentsServiceProvider);
-
       await service.deleteComment(
         commentId: commentId,
         removedImages: removedImages,
       );
 
-      final updatedList = _getCurrentList(
-        current,
-      ).where((c) => c.id != commentId).toList();
+      final latest = state.value ?? current;
 
-      state = AsyncData(
-        current.copyWith(
-          deleteCommentLoadingById: {
-            ...current.deleteCommentLoadingById,
-            commentId: false,
-          },
-        ),
-      );
+      final updatedList = _getCurrentList(latest)
+          .where((c) => c.id != commentId)
+          .toList();
 
-      _setUpdatedList(state.value ?? current, updatedList);
+      if (_imageId != null) {
+        state = AsyncData(
+          latest.copyWith(
+            imageComments: {
+              ...latest.imageComments,
+              _imageId!: updatedList,
+            },
+            deleteCommentLoadingById: {
+              ...latest.deleteCommentLoadingById,
+              commentId: false,
+            },
+          ),
+        );
+      } else {
+        state = AsyncData(
+          latest.copyWith(
+            articleComments: {
+              ...latest.articleComments,
+              _articleId!: updatedList,
+            },
+            deleteCommentLoadingById: {
+              ...latest.deleteCommentLoadingById,
+              commentId: false,
+            },
+          ),
+        );
+      }
     } catch (e) {
       state = AsyncData(
         current.copyWith(
@@ -237,30 +284,11 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     }
   }
 
-  // helper to get current list based on context (article vs image)
+  // helper getting current state/list
   List<CommentModel> _getCurrentList(CommentsState current) {
     if (_imageId != null) {
       return current.imageComments[_imageId!] ?? [];
     }
     return current.articleComments[_articleId!] ?? [];
-  }
-
-  void _setUpdatedList(CommentsState current, List<CommentModel> updatedList) {
-    if (_imageId != null) {
-      state = AsyncData(
-        current.copyWith(
-          imageComments: {...current.imageComments, _imageId!: updatedList},
-        ),
-      );
-    } else {
-      state = AsyncData(
-        current.copyWith(
-          articleComments: {
-            ...current.articleComments,
-            _articleId!: updatedList,
-          },
-        ),
-      );
-    }
   }
 }

@@ -29,8 +29,12 @@ class CommentList extends ConsumerWidget {
             state.value?.updateCommentLoadingById[comment.id] ?? false;
 
         return Stack(
+          key: ValueKey(comment.id),
           children: [
-            CommentItem(comment: comment),
+            CommentItem(
+              key: ValueKey(comment.id),
+              comment: comment
+              ),
             if (isDeleting || isUpdating)
               Positioned.fill(
                 child: Container(
