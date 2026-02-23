@@ -36,6 +36,15 @@ class ProfilesController extends AsyncNotifier<Profile?> {
       return null;
     }
   }
+  
+  Future<Profile?> fetchProfile({String? userId}) async {
+    final data = userId == null 
+        ? await _service.fetchProfile() // current user
+        : await _service.fetchPublicProfile(userId); // public profile
+    if (data.isEmpty) return null;
+    return Profile.fromJson(data.first);
+  }   
+
 
   // create
   Future<void> createProfile({

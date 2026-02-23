@@ -4,6 +4,7 @@ class ArticleModel {
   final String id;
   final String title;
   final String content;
+  final String authorId;
   final List<ImageModel> images;
   final DateTime createdAt;
   final String? fullName;
@@ -12,6 +13,7 @@ class ArticleModel {
     required this.id,
     required this.title,
     required this.content,
+    required this.authorId,
     required this.images,
     required this.createdAt,
     this.fullName,
@@ -22,6 +24,7 @@ class ArticleModel {
     id: json['id'],
     title: json['title'],
     content: json['content'],
+    authorId: json['author_id'],
     images: (json['images'] as List?)
               ?.map((e) => ImageModel.fromJson(e))
               .toList() ?? [],

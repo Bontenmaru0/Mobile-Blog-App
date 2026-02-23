@@ -29,15 +29,16 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
   List<String> removedImages = [];
 
   @override
-    void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
   void initState() {
     super.initState();
     _controller.text = widget.comment.content ?? "";
     existingImages = List.from(widget.comment.images);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   Future<void> pickImages() async {

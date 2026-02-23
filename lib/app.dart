@@ -26,13 +26,25 @@ class _AppView extends StatelessWidget {
       title: 'Modern Samurai',
       theme: AppTheme.lightTheme,
       initialRoute: '/',
-      routes: {
-        '/': (context) => const AuthWrapper(),
-        '/login_screen': (context) => const LoginScreen(),
-        '/register_screen': (context) => const RegisterScreen(),
-        '/profile_screen': (context) => const ProfileScreen(),
-        '/create_profile_screen': (context) => const CreateProfileScreen(),
-        '/update_profile_screen': (context) => const UpdateProfileScreen(),
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/':
+            return MaterialPageRoute(builder: (e) => const AuthWrapper());
+          case '/login_screen':
+            return MaterialPageRoute(builder: (e) => const LoginScreen());
+          case '/register_screen':
+            return MaterialPageRoute(builder: (e) => const RegisterScreen());
+          case '/profile_screen':
+            final args = settings.arguments as Map<String, dynamic>?;
+            final userId = args?['userId'] as String?;
+            return MaterialPageRoute(builder: (e) => ProfileScreen(userId: userId));
+          case '/create_profile_screen':
+            return MaterialPageRoute(builder: (e) => const CreateProfileScreen());
+          case '/update_profile_screen':
+            return MaterialPageRoute(builder: (e) => const UpdateProfileScreen());
+          default:
+            return MaterialPageRoute(builder: (e) => const AuthWrapper());
+        }
       },
     );
   }

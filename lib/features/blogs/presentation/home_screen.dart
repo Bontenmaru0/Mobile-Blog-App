@@ -12,6 +12,7 @@ import 'article_widgets/update_article.dart';
 import '../../../shared/widgets/app_refresh.dart';
 import '../../comments/presentation/comment_widgets/comment_panel.dart';
 import '../../../core/enums/comment_context_type.dart';
+import '../../../features/profiles/presentation/widgets/profile_link.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
@@ -469,12 +470,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                             const SizedBox(height: 8),
 
                                             //meta info
-                                            Text(
-                                              'Published by ${article.fullName ?? 'Unknown'} • ${timeAgo(article.createdAt)}',
-                                              style: const TextStyle(
-                                                color: Colors.grey,
-                                                fontSize: 12,
-                                              ),
+                                            Row(
+                                              children: [
+                                                const Text(
+                                                  'Published by ',
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                                ProfileLink(
+                                                  userId: article.authorId,           // pass the actual user ID
+                                                  displayName: article.fullName ?? "Unknown", // the name to display
+                                                  textColor: Colors.grey,           // match your styling
+                                                ),
+                                                Text(
+                                                  ' • ${timeAgo(article.createdAt)}',
+                                                  style: const TextStyle(
+                                                    color: Colors.grey,
+                                                    fontSize: 12,
+                                                  ),
+                                                ),
+                                              ],
                                             ),
                                             const SizedBox(height: 8),
                                             // comment button

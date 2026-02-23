@@ -5,6 +5,8 @@ import '../../state/comments_controller.dart';
 import '../../../../shared/widgets/image/comment_image_grid.dart';
 import '../../../../core/constants/time_ago.dart';
 import 'update_comment_panel.dart';
+import '../../../profiles/presentation/widgets/profile_link.dart';
+import '../../../auth/state/auth_controller.dart';
 
 class CommentItem extends ConsumerWidget {
   final CommentModel comment;
@@ -40,7 +42,8 @@ class CommentItem extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(commentsControllerProvider);
     final isEdited = comment.status == 'edited';
-    final isLoading = state.value?.updateCommentLoadingById[comment.id] == true ||
+    final isLoading =
+        state.value?.updateCommentLoadingById[comment.id] == true ||
         state.value?.deleteCommentLoadingById[comment.id] == true;
 
     return Stack(
@@ -62,12 +65,10 @@ class CommentItem extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // author
-                  Text(
-                    comment.authorName,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                    ),
+                  ProfileLink(
+                    userId: comment.userId,
+                    displayName: comment.authorName,
+                    textColor: Colors.black,
                   ),
 
                   Row(
@@ -81,22 +82,49 @@ class CommentItem extends ConsumerWidget {
                           ),
                         ),
                       const SizedBox(width: 4),
-                      PopupMenuButton<String>(
-                        padding: EdgeInsets.zero,
-                        icon: const Icon(Icons.more_vert, size: 18),
-                        onSelected: (value) {
-                          if (value == 'edit') _openEditCommentPanel(context);
-                          if (value == 'delete') {
-                            ref.read(commentsControllerProvider.notifier).deleteComment(
-                                  commentId: comment.id,
-                                  removedImages: comment.images,
-                                );
+
+                      // Check if current user owns the comment
+                      Builder(
+                        builder: (context) {
+                          final authState = ref.watch(authControllerProvider);
+
+                          // handle AsyncValue<User?> safely
+                          final isOwner = authState.when(
+                            data: (user) => user?.id == comment.userId,
+                            loading: () => false,
+                            error: (e, st) => false,
+                          );
+
+                          if (!isOwner) {
+                            // maintain spacing even if not owner
+                            return const SizedBox(width: 18);
                           }
+
+                          return PopupMenuButton<String>(
+                            padding: EdgeInsets.zero,
+                            icon: const Icon(Icons.more_vert, size: 18),
+                            onSelected: (value) {
+                              if (value == 'edit'){
+                                _openEditCommentPanel(context);
+                              }
+                              if (value == 'delete') {
+                                ref
+                                    .read(commentsControllerProvider.notifier)
+                                    .deleteComment(
+                                      commentId: comment.id,
+                                      removedImages: comment.images,
+                                    );
+                              }
+                            },
+                            itemBuilder: (context) => const [
+                              PopupMenuItem(value: 'edit', child: Text('Edit')),
+                              PopupMenuItem(
+                                value: 'delete',
+                                child: Text('Delete'),
+                              ),
+                            ],
+                          );
                         },
-                        itemBuilder: (context) => const [
-                          PopupMenuItem(value: 'edit', child: Text('Edit')),
-                          PopupMenuItem(value: 'delete', child: Text('Delete')),
-                        ],
                       ),
                     ],
                   ),
@@ -110,7 +138,8 @@ class CommentItem extends ConsumerWidget {
               ],
 
               /// content
-              if (comment.content != null && comment.content!.trim().isNotEmpty) ...[
+              if (comment.content != null &&
+                  comment.content!.trim().isNotEmpty) ...[
                 const SizedBox(height: 2),
                 Text(comment.content!, style: const TextStyle(fontSize: 14)),
               ],

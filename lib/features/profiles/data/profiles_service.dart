@@ -21,6 +21,17 @@ class ProfilesService {
     return list.map((e) => Map<String, dynamic>.from(e)).toList();
   }
 
+  // fetch public profile
+  Future<List<Map<String, dynamic>>> fetchPublicProfile(String userId) async {
+    final response = await _supabase.rpc(
+      'get_user_profile_mobile_public',
+      params: {'p_user_id': userId},
+    );
+
+    final list = response as List<dynamic>;
+    return list.map((e) => Map<String, dynamic>.from(e)).toList();
+  }
+
   // create profile
   Future<Map<String, dynamic>> createProfile({
     required String id,
@@ -39,7 +50,9 @@ class ProfilesService {
           .from('profile_images')
           .uploadBinary(filePath, await avatarFile.readAsBytes());
 
-      avatarUrl = _supabase.storage.from('profile_images').getPublicUrl(filePath);
+      avatarUrl = _supabase.storage
+          .from('profile_images')
+          .getPublicUrl(filePath);
     }
 
     final response = await _supabase.rpc(
@@ -69,21 +82,19 @@ class ProfilesService {
 
     // get current profile to know old avatar
     final currentProfile = await fetchProfile();
-    String? existingAvatarUrl =
-        currentProfile.isNotEmpty ? currentProfile.first['avatar_url'] : null;
+    String? existingAvatarUrl = currentProfile.isNotEmpty
+        ? currentProfile.first['avatar_url']
+        : null;
 
     // if deleting old avatar OR replacing it
     if ((deleteOldAvatar || avatarFile != null) &&
         existingAvatarUrl != null &&
         existingAvatarUrl.isNotEmpty) {
-
       final uri = Uri.parse(existingAvatarUrl);
-      final filePath = uri.pathSegments.skip(1).join('/'); 
+      final filePath = uri.pathSegments.skip(1).join('/');
       // removes bucket name from URL
 
-      await _supabase.storage
-          .from('profile_images')
-          .remove([filePath]);
+      await _supabase.storage.from('profile_images').remove([filePath]);
     }
 
     // upload new avatar if provided
@@ -95,8 +106,9 @@ class ProfilesService {
           .from('profile_images')
           .uploadBinary(filePath, await avatarFile.readAsBytes());
 
-      avatarUrl =
-          _supabase.storage.from('profile_images').getPublicUrl(filePath);
+      avatarUrl = _supabase.storage
+          .from('profile_images')
+          .getPublicUrl(filePath);
     } else if (!deleteOldAvatar) {
       // keep old avatar if not deleting
       avatarUrl = existingAvatarUrl;
