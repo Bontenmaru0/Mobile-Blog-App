@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'image_gallery_page.dart';
+import '../loading/skeleton.dart';
 
 class CommentImageGrid extends StatelessWidget {
   final List<String> images;
 
-  const CommentImageGrid({
-    super.key,
-    required this.images,
-  });
+  const CommentImageGrid({super.key, required this.images});
 
   @override
   Widget build(BuildContext context) {
     if (images.isEmpty) return const SizedBox();
 
-    final displayImages =
-        images.length > 2 ? images.take(2).toList() : images;
+    final displayImages = images.length > 2 ? images.take(2).toList() : images;
 
     final extraCount = images.length - 2;
 
@@ -38,10 +35,8 @@ class CommentImageGrid extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => ImageGalleryPage(
-                    images: images,
-                    initialIndex: index,
-                  ),
+                  builder: (_) =>
+                      ImageGalleryPage(images: images, initialIndex: index),
                 ),
               );
             },
@@ -50,9 +45,35 @@ class CommentImageGrid extends StatelessWidget {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.zero,
-                  child: Image.network(
-                    displayImages[index],
-                    fit: BoxFit.cover,
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      const SkeletonShimmer(
+                        child: SkeletonBox(
+                          width: double.infinity,
+                          height: double.infinity,
+                          borderRadius: BorderRadius.zero,
+                        ),
+                      ),
+                      Image.network(
+                        displayImages[index],
+                        fit: BoxFit.cover,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const SizedBox.shrink();
+                        },
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: const Color(0xFFE0E0E0),
+                            alignment: Alignment.center,
+                            child: const Icon(
+                              Icons.broken_image_outlined,
+                              color: Colors.black54,
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
 

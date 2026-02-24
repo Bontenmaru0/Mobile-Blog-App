@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/comments_controller.dart';
 import '../../../core/enums/comment_context_type.dart';
 import 'comment_widgets/comment_list.dart';
+import 'comment_widgets/comment_list_skeleton.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../auth/state/auth_controller.dart';
 import '../../../shared/widgets/app_refresh.dart';
@@ -75,9 +76,7 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
       _controller.clear();
       setState(() => _selectedImages.clear());
     } catch (e) {
-      debugPrint(
-        'ERROR POSTING COMMENT: $e',
-      );
+      debugPrint('ERROR POSTING COMMENT: $e');
     }
   }
 
@@ -93,7 +92,7 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
     final authState = ref.watch(authControllerProvider); // AsyncValue<User?>
 
     return commentsState.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const CommentListSkeleton(),
       error: (err, _) => Center(
         child: Text(
           'Failed to load comments',
@@ -114,14 +113,14 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
               child: AppRefreshWrapper(
                 onRefresh: _refreshComments,
                 child: state.contentLoading
-                    ? const Center(child: CircularProgressIndicator())
+                    ? const CommentListSkeleton()
                     : (comments.isEmpty
-                        ? const Center(child: Text("No comments yet"))
-                        : CommentList(
-                            comments: comments,
-                            articleId: widget.articleId,
-                            imageId: widget.imageId,
-                          )),
+                          ? const Center(child: Text("No comments yet"))
+                          : CommentList(
+                              comments: comments,
+                              articleId: widget.articleId,
+                              imageId: widget.imageId,
+                            )),
               ),
             ),
             // selected image previews
@@ -131,7 +130,8 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: _selectedImages.length,
-                  separatorBuilder: (context, index) => const SizedBox(width: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
                   itemBuilder: (context, i) => Stack(
                     children: [
                       Image.file(
@@ -144,7 +144,8 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
                         top: 0,
                         right: 0,
                         child: GestureDetector(
-                          onTap: () => setState(() => _selectedImages.removeAt(i)),
+                          onTap: () =>
+                              setState(() => _selectedImages.removeAt(i)),
                           child: Container(
                             color: Colors.black54,
                             padding: const EdgeInsets.all(2),
