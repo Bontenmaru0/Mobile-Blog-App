@@ -56,8 +56,9 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         );
       }
     } catch (e) {
+      final latest = state.value ?? current;
       state = AsyncData(
-        current.copyWith(contentLoading: false, contentError: e.toString()),
+        latest.copyWith(contentLoading: false, contentError: e.toString()),
       );
     }
   }
@@ -114,8 +115,9 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         );
       }
     } catch (e) {
+      final latest = state.value ?? current;
       state = AsyncData(
-        current.copyWith(
+        latest.copyWith(
           insertCommentLoading: false,
           insertCommentError: e.toString(),
         ),
@@ -147,6 +149,7 @@ class CommentsController extends AsyncNotifier<CommentsState> {
 
     final afterLoading = state.value ?? current;
     final existing = CommentsStateUpdater.findCommentById(afterLoading, commentId);
+    final originalSnapshot = existing;
     if (existing != null) {
       state = AsyncData(
         CommentsStateUpdater.replaceCommentById(
@@ -195,15 +198,23 @@ class CommentsController extends AsyncNotifier<CommentsState> {
       );
     } catch (e) {
       final latest = state.value ?? current;
+      final reverted = originalSnapshot != null
+          ? CommentsStateUpdater.replaceCommentById(
+              latest,
+              commentId,
+              originalSnapshot,
+            )
+          : latest;
       state = AsyncData(
-        latest.copyWith(
+        reverted.copyWith(
           updateCommentLoadingById: {
-            ...latest.updateCommentLoadingById,
+            ...reverted.updateCommentLoadingById,
             commentId: false,
           },
           updateCommentError: e.toString(),
         ),
       );
+      rethrow;
     }
   }
 
@@ -242,10 +253,11 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         ),
       );
     } catch (e) {
+      final latest = state.value ?? current;
       state = AsyncData(
-        current.copyWith(
+        latest.copyWith(
           deleteCommentLoadingById: {
-            ...current.deleteCommentLoadingById,
+            ...latest.deleteCommentLoadingById,
             commentId: false,
           },
           deleteCommentError: e.toString(),

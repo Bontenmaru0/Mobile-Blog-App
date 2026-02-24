@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/models/comment_model.dart';
-import '../../state/comments_controller.dart';
 import 'comment_item.dart';
 
 class CommentList extends ConsumerWidget {
@@ -18,8 +17,6 @@ class CommentList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(commentsControllerProvider);
-
     return ListView.separated(
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: comments.length,
@@ -27,37 +24,11 @@ class CommentList extends ConsumerWidget {
       itemBuilder: (context, index) {
         final comment = comments[index];
 
-        final isDeleting =
-            state.value?.deleteCommentLoadingById[comment.id] ?? false;
-        final isUpdating =
-            state.value?.updateCommentLoadingById[comment.id] ?? false;
-
-        return Stack(
+        return CommentItem(
           key: ValueKey(comment.id),
-          children: [
-            CommentItem(
-              key: ValueKey(comment.id),
-              comment: comment,
-              articleId: articleId,
-              imageId: imageId,
-            ),
-            if (isDeleting || isUpdating)
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.black,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Center(
-                    child: SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  ),
-                ),
-              ),
-          ],
+          comment: comment,
+          articleId: articleId,
+          imageId: imageId,
         );
       },
     );

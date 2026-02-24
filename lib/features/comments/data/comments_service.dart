@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/services/supabase_client.dart';
 import '../../../core/models/comment_model.dart';
@@ -116,18 +117,6 @@ class CommentsService {
         newUploadedUrls.add(publicUrl);
       }
 
-      // Remove deleted images from storage (paths only)
-      if (removedImages.isNotEmpty) {
-        final paths = removedImages
-            .map(_getCommentImagePath)
-            .whereType<String>()
-            .toList();
-
-        if (paths.isNotEmpty) {
-          await _supabase.storage.from('comment_images').remove(paths);
-        }
-      }
-
       // Call RPC to update comment (DB removal uses full image URL)
       final response = await _supabase.rpc(
         'update_comment_mobile',
@@ -141,7 +130,19 @@ class CommentsService {
         },
       );
 
-      print("Update RPC response: $response");
+      debugPrint("Update RPC response: $response");
+
+      // Remove deleted images from storage only after successful DB update.
+      if (removedImages.isNotEmpty) {
+        final paths = removedImages
+            .map(_getCommentImagePath)
+            .whereType<String>()
+            .toList();
+
+        if (paths.isNotEmpty) {
+          await _supabase.storage.from('comment_images').remove(paths);
+        }
+      }
 
       // RPC response shape for update can be partial. Re-fetch using normal
       // read endpoints to get a full comment payload compatible with model parsing.
@@ -165,8 +166,8 @@ class CommentsService {
       }
       throw Exception('Unexpected RPC response format');
     } catch (e, stack) {
-      print("UPDATE ||||||||||| UPDATE COMMENT ERROR: $e");
-      print(stack);
+      debugPrint("UPDATE ||||||||||| UPDATE COMMENT ERROR: $e");
+      debugPrint(stack.toString());
       rethrow;
     }
   }
@@ -191,8 +192,8 @@ class CommentsService {
       await _supabase.rpc('delete_comment', params: {'p_comment_id': commentId});
       return commentId;
     } catch (e, stack) {
-      print("UPDATE ||||||||||| DELETE COMMENT ERROR: $e");
-      print(stack);
+      debugPrint("UPDATE ||||||||||| DELETE COMMENT ERROR: $e");
+      debugPrint(stack.toString());
       rethrow;
     }
   }

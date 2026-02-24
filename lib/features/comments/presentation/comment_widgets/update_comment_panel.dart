@@ -69,14 +69,18 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
 
   Future<void> submit() async {
     final controller = ref.read(commentsControllerProvider.notifier);
-    await controller.updateComment(
-      commentId: widget.comment.id,
-      articleId: widget.articleId,
-      imageId: widget.imageId,
-      content: _controller.text.trim(),
-      newFiles: selectedImages,
-      removedImages: removedImages,
-    );
+    try {
+      await controller.updateComment(
+        commentId: widget.comment.id,
+        articleId: widget.articleId,
+        imageId: widget.imageId,
+        content: _controller.text.trim(),
+        newFiles: selectedImages,
+        removedImages: removedImages,
+      );
+    } catch (_) {
+      return;
+    }
 
     if (!mounted) return;
     Navigator.pop(context);

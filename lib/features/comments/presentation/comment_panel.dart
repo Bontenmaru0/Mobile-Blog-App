@@ -75,7 +75,7 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
       _controller.clear();
       setState(() => _selectedImages.clear());
     } catch (e) {
-      print(
+      debugPrint(
         'ERROR POSTING COMMENT: $e',
       );
     }
