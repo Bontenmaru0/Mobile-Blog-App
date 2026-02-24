@@ -1,46 +1,54 @@
 lib/
-├── main.dart                  # App entry point (runs `App`)
-├── app.dart                   # App widget + theme, routing, top-level providers
-├── core/                      # Cross-cutting code
-│   ├── constants/             # App-wide constants (keys, route names)
-│   ├── enums/                 # Shared enums
-│   ├── models/                # Data models (User, Post, Comment, CommentModel)
-│   ├── services/              # External services (Supabase client, storage, API adapters)
-│   └── utils/                 # Helpers (formatters, validators, image helpers)
-├── features/                  # Feature modules (vertical slices)
-│   ├── auth/                  # Authentication flows
-│   │   ├── data/              # API / Supabase queries (e.g. auth_service.dart)
-│   │   ├── presentation/      # Screens & widgets (login/signup)
-│   │   └── state/             # Riverpod state (e.g. auth_controller.dart)
-│   ├── blogs/                 # Blog listing, detail, creation
-│   │   ├── data/
-│   │   ├── presentation/
-│   │   │   └── widgets/
-│   │   └── state/             # Blog controllers/providers
-│   ├── profiles/              # User profiles
-│   │   ├── data/
-│   │   ├── presentation/
-│   │   │   └── widgets/
-│   │   └── state/
-│   └── comments/              # Comment system (article & image comments)
-│       ├── data/              # comments_service.dart (fetch/create/update/delete)
-│       ├── presentation/      # Comment UI + composable widgets
-│       │   └── widgets/
-│       └── state/             # comments_controller.dart, comments_state.dart (Riverpod AsyncNotifier)
-└── shared/
-    ├── theme/                 # Colors, typography, theme definitions
-    └── widgets/               # Reusable UI (buttons, cards)
+|-- main.dart                          # Loads .env, initializes Supabase, runs ProviderScope
+|-- app.dart                           # MaterialApp config, routes, app theme usage
+|-- core/
+|   |-- constants/                     # Shared constants/helpers (e.g., time_ago)
+|   |-- enums/                         # Shared enums (e.g., comment context type)
+|   |-- models/                        # Core models (article, comment, image, profile)
+|   |-- services/                      # Core service accessors (e.g., Supabase client)
+|   `-- utils/                         # Utilities (e.g., snackbar helper)
+|-- features/
+|   |-- auth/
+|   |   |-- data/                      # Supabase auth API calls
+|   |   |-- presentation/              # Login/register screens
+|   |   `-- state/                     # Auth controller/provider state
+|   |-- blogs/
+|   |   |-- data/                      # Article RPC + storage upload/delete logic
+|   |   |-- presentation/              # Home/feed + create/update article UI
+|   |   `-- state/                     # Blogs state + controller (fetch/create/update/delete)
+|   |-- profiles/
+|   |   |-- data/                      # Profile RPC + avatar upload/remove logic
+|   |   |-- presentation/              # Create/update/profile screens + profile widgets
+|   |   `-- state/                     # Async profile controller/provider
+|   `-- comments/
+|       |-- data/                      # Comment RPC + image upload/delete logic
+|       |-- presentation/              # Comment panel and comment widgets
+|       `-- state/                     # Comments state, controller, state-updater helpers
+`-- shared/
+    |-- theme/                         # App theme config
+    `-- widgets/                       # Reusable widgets (nav menu, image grids, refresh wrapper, etc.)
 
-platforms/                     # Platform-specific folders (android/ ios/ web/ windows/ linux/ macos)
-test/                          # Unit & widget tests
+platform folders/
+- android/
+- ios/
+- web/
+- windows/
+- linux/
+- macos/
 
-Notes:
-- State management: Riverpod with AsyncNotifier/AsyncNotifierProvider is used across features.
-- Services: `core/services` contains Supabase client adapters, storage helpers, and API wrappers.
-- Comments feature supports two contexts: article-level and image-level. The controller uses maps keyed by id to store lists for each article or image and keeps the currently-active `articleId` / `imageId` when operating.
-- File layout is vertical-by-feature: each feature groups `data`, `presentation`, and `state` to keep concerns localized and easier to test.
+test/
+- Flutter unit/widget tests
 
-Quick references:
-- comments controller: `lib/features/comments/state/comments_controller.dart`
-- comments service: `lib/features/comments/data/comments_service.dart`
-- auth service: `lib/features/auth/data/auth_service.dart`
+Architecture Notes
+- Feature-first vertical slicing:
+  - Each domain keeps `data`, `state`, and `presentation` together.
+- Riverpod state flow:
+  - UI watches providers in `state/`.
+  - Controllers orchestrate async operations and loading/error states.
+  - Services in `data/` isolate Supabase RPC/storage/auth calls.
+- Comments domain design:
+  - `CommentsState` stores lists in maps keyed by `articleId` and `imageId`.
+  - Per-comment loading maps support granular update/delete indicators.
+- Backend integration:
+  - Supabase is initialized at app startup from `.env` keys.
+  - Features call RPC functions and storage buckets through service classes.

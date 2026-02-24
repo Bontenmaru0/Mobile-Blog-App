@@ -1,74 +1,117 @@
 # Blog App
 
-A Flutter mobile application for reading and interacting with articles and image-based posts. Features include authentication, article listing/detail pages, user profiles, and a flexible comments system supporting article-level and per-image comments.
+A Flutter app for browsing blog posts with image galleries, user profiles, and a flexible comments system (article comments + per-image comments).
 
-**Project status:** Prototype / Early development
+## Current Scope
+- Auth with Supabase (`login`, `register`, `logout`)
+- Article feed with pagination and title search
+- Create, update, and delete articles
+- Multi-image upload for articles
+- Profile creation, update, and public profile viewing
+- Comments on:
+  - entire articles
+  - individual images inside an article
+- Comment create, update, delete (with optional images)
+- Pull-to-refresh on article and comment lists
 
-**Tech stack:** Flutter, Dart, Riverpod (state management), Supabase (backend/storage adapters)
+## Tech Stack
+- Flutter (Material)
+- Dart
+- Riverpod (`Notifier`, `AsyncNotifier`, `StateNotifier`)
+- Supabase (Auth, Storage, RPC)
+- `flutter_dotenv` for local environment config
 
-**Repository layout:** see [project_architecture](project_architecture)
+## Project Architecture
+Feature-first, vertical slices:
 
-**Core concepts:**
-- **Feature-first layout:** Each feature (auth, blogs, comments, profiles) groups `data`, `presentation`, and `state`.
-- **State management:** Riverpod with `AsyncNotifier`/`AsyncNotifierProvider` for async operations and fine-grained loading/error states.
-- **Comments model:** Supports article-level and image-level comments stored as maps keyed by `articleId` or `imageId` in `CommentsState`.
+- `lib/core`: shared models, enums, utilities, service wrappers
+- `lib/features`: app features grouped by domain (`auth`, `blogs`, `profiles`, `comments`)
+- `lib/shared`: reusable theme and shared UI widgets
 
-**Features**
-- Authentication (signup/login)
-- Article list and detail views
-- User profiles
-- Comments with nested replies and media attachments (images/files)
+Each feature follows:
+- `data/`: Supabase access and backend calls
+- `state/`: Riverpod controllers + feature state models
+- `presentation/`: screens and widgets
 
-**Getting started (development)**
+Detailed structure: [project_architecture](project_architecture)
 
-Prerequisites:
-- Install Flutter SDK (stable channel) and set up platform tooling for Android/iOS.
-- Optional: Android Studio / Xcode for device emulators.
+## State Management Pattern
+- Controllers live in `features/*/state`
+- Services live in `features/*/data`
+- UI reads/watches controller providers
+- Mutations are handled in controllers, with loading/error state tracked per feature and, where needed, per-item (maps keyed by entity id)
 
-Clone and install dependencies:
+### Comments State Shape (high level)
+`CommentsState` stores comments in maps for efficient rendering:
+- `articleComments[articleId] -> List<CommentModel>`
+- `imageComments[imageId] -> List<CommentModel>`
 
-```bash
-git clone <repo-url>
-cd blog_app
-flutter pub get
+It also tracks operation-specific loading/error states for:
+- content fetch
+- insert
+- update per comment id
+- delete per comment id
+
+## Supabase Integration
+### Environment
+Create `.env` in project root:
+
+```env
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-Environment / secrets:
-- The app uses Supabase (or similar) for backend services. Provide your endpoint and anon key via environment or runtime config expected by `core/services` (e.g. `.env` or build-time variables). Check `core/services` for the exact config keys used.
+Loaded at startup in `lib/main.dart` before `Supabase.initialize`.
 
-Run on a device/emulator:
+### Storage Buckets Used
+- `article_images`
+- `comment_images`
+- `profile_images`
 
+### RPC Functions Referenced in Code
+- Articles:
+  - `get_articles`
+  - `insert_article`
+  - `update_article`
+  - `delete_article`
+- Comments:
+  - `get_article_comments`
+  - `get_images_comments`
+  - `insert_comment_mobile`
+  - `update_comment_mobile`
+  - `delete_comment`
+- Profiles:
+  - `get_user_profile_mobile`
+  - `get_user_profile_mobile_public`
+  - `insert_profile_mobile`
+  - `update_profile_mobile`
+
+## Run Locally
 ```bash
+flutter pub get
 flutter run
 ```
 
-Build APK (Android):
-
+## Test
 ```bash
-flutter build apk --release
+flutter test
 ```
 
-Build iOS (macOS required):
-
-```bash
-flutter build ios --release
-```
-
-Testing
-- Unit & widget tests: `flutter test`
-
-Developer notes
-- The comments system lives under `lib/features/comments`.
-	- Controller: `lib/features/comments/state/comments_controller.dart` (uses `AsyncNotifier<CommentsState>`)
-	- Service: `lib/features/comments/data/comments_service.dart` (API calls)
-- When fetching or mutating comments, the controller updates maps keyed by id so the UI can efficiently render comment lists per-article or per-image.
-- Follow the existing feature pattern when adding new screens: `data/`, `presentation/`, and `state/` subfolders.
-
-Contributing
-- Fork the repo, create a feature branch, and open a pull request. Keep changes scoped and add tests for new logic.
-
-License
-- Add a license file if you'd like to open-source this project.
-
-Questions or next steps
-- If you want, I can add a CONTRIBUTING.md, example `.env` template, or CI configuration to run tests and format checks.
+## Important Files
+- App bootstrapping:
+  - `lib/main.dart`
+  - `lib/app.dart`
+- Articles:
+  - `lib/features/blogs/data/blogs_service.dart`
+  - `lib/features/blogs/state/blogs_controller.dart`
+- Comments:
+  - `lib/features/comments/data/comments_service.dart`
+  - `lib/features/comments/state/comments_controller.dart`
+  - `lib/features/comments/state/comments_state.dart`
+  - `lib/features/comments/state/comments_state_updater.dart`
+- Profiles:
+  - `lib/features/profiles/data/profiles_service.dart`
+  - `lib/features/profiles/state/profiles_controller.dart`
+- Auth:
+  - `lib/features/auth/data/auth_service.dart`
+  - `lib/features/auth/state/auth_controller.dart`
