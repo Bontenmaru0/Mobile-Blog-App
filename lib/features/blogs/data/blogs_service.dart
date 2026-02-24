@@ -1,7 +1,18 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import '../../../core/services/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/models/blog_model.dart';
+
+class ArticleUpdateResult {
+  final ArticleModel? article;
+  final List<String> newImageUrls;
+
+  const ArticleUpdateResult({
+    required this.article,
+    required this.newImageUrls,
+  });
+}
 
 class BlogsService {
   final SupabaseClient _supabase = SupabaseService.client;
@@ -28,16 +39,13 @@ class BlogsService {
     final data = response['data'] as List? ?? [];
     final total = (response['total'] as num?)?.toInt() ?? 0;
 
-    final articles =
-        data.map((e) => ArticleModel.fromJson(e)).toList();
-
-        print(articles);
+    final articles = data.map((e) => ArticleModel.fromJson(e)).toList();
 
     return (articles, total);
   }
 
   // create
-  Future<ArticleModel> createArticle({
+  Future<void> createArticle({
     required String title,
     required String content,
     required List<File> files,
@@ -54,9 +62,7 @@ class BlogsService {
           '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
       final path = 'articles/$fileName';
 
-      await _supabase.storage
-          .from('article_images')
-          .upload(path, file);
+      await _supabase.storage.from('article_images').upload(path, file);
 
       final publicUrl = _supabase.storage
           .from('article_images')
@@ -65,7 +71,7 @@ class BlogsService {
       uploadedUrls.add(publicUrl);
     }
 
-    final response = await _supabase.rpc(
+    await _supabase.rpc(
       'insert_article',
       params: {
         'p_title': title,
@@ -74,12 +80,10 @@ class BlogsService {
         'p_user_id': user.id,
       },
     );
-
-    return ArticleModel.fromJson(response[0]);
   }
 
   // update
-  Future<ArticleModel> updateArticle({
+  Future<ArticleUpdateResult> updateArticle({
     required String articleId,
     required String title,
     required String content,
@@ -94,29 +98,13 @@ class BlogsService {
           '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
       final path = 'articles/$articleId/$fileName';
 
-      await _supabase.storage
-          .from('article_images')
-          .upload(path, file);
+      await _supabase.storage.from('article_images').upload(path, file);
 
       final publicUrl = _supabase.storage
           .from('article_images')
           .getPublicUrl(path);
 
       newUploadedUrls.add(publicUrl);
-    }
-
-    // delete removed images from storage
-    if (removedImages.isNotEmpty) {
-      final paths = removedImages
-          .map(_getArticleImagePath)
-          .whereType<String>()
-          .toList();
-
-      if (paths.isNotEmpty) {
-        await _supabase.storage
-            .from('article_images')
-            .remove(paths);
-      }
     }
 
     final response = await _supabase.rpc(
@@ -130,7 +118,28 @@ class BlogsService {
       },
     );
 
-    return ArticleModel.fromJson(response[0]);
+    final parsed = _parseArticleResponse(response);
+
+    // best-effort cleanup after DB update succeeds
+    if (removedImages.isNotEmpty) {
+      final paths = removedImages
+          .map(_getArticleImagePath)
+          .whereType<String>()
+          .toList();
+
+      if (paths.isNotEmpty) {
+        try {
+          await _supabase.storage.from('article_images').remove(paths);
+        } catch (e) {
+          debugPrint('Failed to remove old article images: $e');
+        }
+      }
+    }
+
+    return ArticleUpdateResult(
+      article: parsed,
+      newImageUrls: List.unmodifiable(newUploadedUrls),
+    );
   }
 
   // delete
@@ -146,18 +155,11 @@ class BlogsService {
           .toList();
 
       if (paths.isNotEmpty) {
-        await _supabase.storage
-            .from('article_images')
-            .remove(paths);
+        await _supabase.storage.from('article_images').remove(paths);
       }
     }
 
-    await _supabase.rpc(
-      'delete_article',
-      params: {
-        'p_article_id': articleId,
-      },
-    );
+    await _supabase.rpc('delete_article', params: {'p_article_id': articleId});
 
     return articleId;
   }
@@ -167,5 +169,17 @@ class BlogsService {
     const marker = '/article_images/';
     final idx = url.indexOf(marker);
     return idx != -1 ? url.substring(idx + marker.length) : null;
+  }
+
+  ArticleModel? _parseArticleResponse(dynamic response) {
+    if (response is List && response.isNotEmpty && response.first is Map) {
+      return ArticleModel.fromJson(
+        Map<String, dynamic>.from(response.first as Map),
+      );
+    }
+    if (response is Map) {
+      return ArticleModel.fromJson(Map<String, dynamic>.from(response));
+    }
+    return null;
   }
 }

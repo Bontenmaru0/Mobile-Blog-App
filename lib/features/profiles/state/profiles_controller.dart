@@ -19,22 +19,20 @@ class ProfilesController extends AsyncNotifier<Profile?> {
   @override
   // fetch profile on app start
   Future<Profile?> build() async {
+    _service = ref.read(profilesServiceProvider);
     final authState = ref.watch(authControllerProvider);
-    final user = authState.asData?.value;
-
+    final user = authState.isLoading
+        ? await ref
+              .read(authControllerProvider.notifier)
+              .stream
+              .firstWhere((state) => !state.isLoading)
+              .then((state) => state.asData?.value)
+        : authState.asData?.value;
     if (user == null) return null;
 
-    _service = ref.read(profilesServiceProvider);
-
-    try {
-      final data = await _service.fetchProfile();
-      if (data.isEmpty) return null;
-
-      return Profile.fromJson(data.first);
-    } catch (e) {
-      // print('ProfilesController build error: $e');
-      return null;
-    }
+    final data = await _service.fetchProfile();
+    if (data.isEmpty) return null;
+    return Profile.fromJson(data.first);
   }
   
   Future<Profile?> fetchProfile({String? userId}) async {

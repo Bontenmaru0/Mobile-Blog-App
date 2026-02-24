@@ -98,66 +98,100 @@ class _ImageGalleryPageState extends State<ImageGalleryPage> {
               left: 0,
               right: 0,
               child: Center(
-                child: GestureDetector(
-                  onTap: () {
-                    showModalBottomSheet(
-                      context: context,
-                      isScrollControlled: true,
-                      backgroundColor: Colors.white,
-                      shape: const RoundedRectangleBorder(
-                        borderRadius: BorderRadius.vertical(top: Radius.zero),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (widget.images.length > 1)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black54,
+                          borderRadius: BorderRadius.circular(0),
+                        ),
+                        child: Text(
+                          '${currentIndex + 1} of ${widget.images.length}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                      builder: (context) {
-                        return DraggableScrollableSheet(
-                          expand: false,
-                          initialChildSize: 0.85,
-                          minChildSize: 0.25,
-                          maxChildSize: 0.95,
-                          builder: (context, scrollController) {
-                            return Container(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                children: [
-                                  Container(
-                                    width: 50,
-                                    height: 5,
-                                    margin: const EdgeInsets.only(bottom: 12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[400],
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                  ),
-                                  const Align(
-                                    alignment: Alignment.centerLeft,
-                                    child: Text(
-                                      'Photo Comments',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          isScrollControlled: true,
+                          backgroundColor: Colors.white,
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.zero,
+                            ),
+                          ),
+                          builder: (context) {
+                            return DraggableScrollableSheet(
+                              expand: false,
+                              initialChildSize: 0.85,
+                              minChildSize: 0.25,
+                              maxChildSize: 0.95,
+                              builder: (context, scrollController) {
+                                return Container(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: 50,
+                                        height: 5,
+                                        margin: const EdgeInsets.only(
+                                          bottom: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[400],
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                        ),
                                       ),
-                                    ),
+                                      const Align(
+                                        alignment: Alignment.centerLeft,
+                                        child: Text(
+                                          'Photo Comments',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 16,
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 20),
+                                      Expanded(
+                                        child: CommentPanel(
+                                          articleId: widget.articleId!,
+                                          imageId: widget.imageId!,
+                                          type: CommentContextType.comment,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 20),
-                                  Expanded(
-                                    child: CommentPanel(
-                                      articleId: widget.articleId!,
-                                      imageId: widget.imageId!,
-                                      type: CommentContextType.comment,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                );
+                              },
                             );
                           },
                         );
                       },
-                    );
-                  },
-                  child: const CircleAvatar(
-                    backgroundColor: Colors.black54,
-                    radius: 25,
-                    child: Icon(Icons.chat_bubble_outline, color: Colors.white),
-                  ),
+                      child: const CircleAvatar(
+                        backgroundColor: Colors.black54,
+                        radius: 25,
+                        child: Icon(
+                          Icons.chat_bubble_outline,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),

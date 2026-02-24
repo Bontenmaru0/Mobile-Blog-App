@@ -15,7 +15,11 @@ class NavUserMenu extends ConsumerWidget {
       if (previous?.value != null && next.value == null) {
         // user just logged out
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
-        AppSnackBar.show( context, "Logged out successful! See you later!👋", type: SnackType.success);
+        AppSnackBar.show(
+          context,
+          "Logged out successful! See you later!👋",
+          type: SnackType.success,
+        );
       }
     });
 
@@ -76,7 +80,6 @@ class NavUserMenu extends ConsumerWidget {
         return _LoggedInAvatar(user: user);
       },
     );
-
   }
 }
 
@@ -112,66 +115,81 @@ class _LoggedInAvatar extends ConsumerWidget {
             }
           },
           itemBuilder: (context) => const [
-            PopupMenuItem(
-              value: 'profile',
-              child: Text('My Profile'),
-            ),
-            PopupMenuItem(
-              value: 'logout',
-              child: Text('Logout'),
-            ),
+            PopupMenuItem(value: 'profile', child: Text('My Profile')),
+            PopupMenuItem(value: 'logout', child: Text('Logout')),
           ],
-          child: AnimatedSwitcher(
-            duration: const Duration(milliseconds: 300),
-            transitionBuilder: (child, animation) =>
-                RotationTransition(turns: animation, child: child),
-            child: Stack(
-              key: ValueKey(avatarUrl ?? 'default-${user.id}'),
-              clipBehavior: Clip.none,
-              children: [
-                CircleAvatar(
-                  radius: 18,
-                  backgroundColor: Colors.black,
-                  backgroundImage: (avatarUrl != null && avatarUrl.isNotEmpty)
-                      ? NetworkImage(avatarUrl)
-                      : null,
-                  child: (avatarUrl == null || avatarUrl.isEmpty)
-                      ? Text(
-                          user.email?.substring(0, 1).toUpperCase() ?? 'U',
-                          style: const TextStyle(color: Colors.white),
-                        )
-                      : null,
-                ),
-                const Positioned(
-                  bottom: -2,
-                  right: -2,
-                  child: CircleAvatar(
-                    radius: 8,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.keyboard_arrow_down,
-                      size: 12,
-                      color: Colors.black,
-                    ),
+          child: Stack(
+            clipBehavior: Clip.none,
+            children: [
+              _avatar(user: user, avatarUrl: avatarUrl),
+              const Positioned(
+                bottom: -2,
+                right: -2,
+                child: CircleAvatar(
+                  radius: 8,
+                  backgroundColor: Colors.white,
+                  child: Icon(
+                    Icons.keyboard_arrow_down,
+                    size: 12,
+                    color: Colors.black,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _defaultAvatar(User user) => CircleAvatar(
-        radius: 18,
-        backgroundColor: Colors.black,
-        child: Text(
-          user.email?.substring(0, 1).toUpperCase() ?? 'U',
-          style: const TextStyle(color: Colors.white),
+  Widget _avatar({required User user, String? avatarUrl}) {
+    if (avatarUrl == null || avatarUrl.isEmpty) {
+      return _defaultAvatar(user);
+    }
+
+    return CircleAvatar(
+      radius: 18,
+      backgroundColor: Colors.black,
+      child: ClipOval(
+        child: SizedBox(
+          width: 36,
+          height: 36,
+          child: Image.network(
+            avatarUrl,
+            fit: BoxFit.cover,
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(
+                child: SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                ),
+              );
+            },
+            errorBuilder: (context, error, stackTrace) {
+              return Center(
+                child: Text(
+                  user.email?.substring(0, 1).toUpperCase() ?? 'U',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              );
+            },
+          ),
         ),
-      );
+      ),
+    );
+  }
+
+  Widget _defaultAvatar(User user) => CircleAvatar(
+    radius: 18,
+    backgroundColor: Colors.black,
+    child: Text(
+      user.email?.substring(0, 1).toUpperCase() ?? 'U',
+      style: const TextStyle(color: Colors.white),
+    ),
+  );
 }
-
-
-

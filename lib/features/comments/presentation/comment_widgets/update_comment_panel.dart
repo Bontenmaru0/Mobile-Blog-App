@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/models/comment_model.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import '../../state/comments_controller.dart';
 
 class EditCommentPanel extends ConsumerStatefulWidget {
@@ -10,6 +11,7 @@ class EditCommentPanel extends ConsumerStatefulWidget {
   final String articleId;
   final String? imageId;
   final ScrollController scrollController;
+  final BuildContext parentContext;
 
   const EditCommentPanel({
     super.key,
@@ -17,6 +19,7 @@ class EditCommentPanel extends ConsumerStatefulWidget {
     required this.articleId,
     this.imageId,
     required this.scrollController,
+    required this.parentContext,
   });
 
   @override
@@ -84,6 +87,12 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
 
     if (!mounted) return;
     Navigator.pop(context);
+    if (!widget.parentContext.mounted) return;
+    AppSnackBar.show(
+      widget.parentContext,
+      "Comment updated successfully!\u270F\uFE0F",
+      type: SnackType.success,
+    );
   }
 
   @override
@@ -161,6 +170,18 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
                   const SizedBox(height: 12),
 
                   if (existingImages.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        "Current images (kept unless removed)",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
+                  if (existingImages.isNotEmpty)
                     SizedBox(
                       height: 100,
                       child: ListView(
@@ -199,6 +220,21 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
                       ),
                     ),
 
+                  if (existingImages.isNotEmpty && selectedImages.isNotEmpty)
+                    const SizedBox(height: 10),
+
+                  if (selectedImages.isNotEmpty)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 6),
+                      child: Text(
+                        "New images (to upload)",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.black54,
+                        ),
+                      ),
+                    ),
                   if (selectedImages.isNotEmpty)
                     SizedBox(
                       height: 100,

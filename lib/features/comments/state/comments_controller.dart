@@ -263,6 +263,7 @@ class CommentsController extends AsyncNotifier<CommentsState> {
           deleteCommentError: e.toString(),
         ),
       );
+      rethrow;
     }
   }
 }

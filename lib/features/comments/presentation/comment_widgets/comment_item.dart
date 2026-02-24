@@ -4,6 +4,7 @@ import '../../../../core/models/comment_model.dart';
 import '../../state/comments_controller.dart';
 import '../../../../shared/widgets/image/comment_image_grid.dart';
 import '../../../../core/constants/time_ago.dart';
+import '../../../../core/utils/app_snackbar.dart';
 import 'update_comment_panel.dart';
 import '../../../profiles/presentation/widgets/profile_link.dart';
 import '../../../auth/state/auth_controller.dart';
@@ -21,6 +22,7 @@ class CommentItem extends ConsumerWidget {
   });
 
   void _openEditCommentPanel(BuildContext context) {
+    final parentContext = context;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -40,10 +42,53 @@ class CommentItem extends ConsumerWidget {
               articleId: articleId,
               imageId: imageId,
               scrollController: scrollController,
+              parentContext: parentContext,
             );
           },
         );
       },
+    );
+  }
+
+  Future<void> _confirmDeleteComment(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
+    await showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text("Delete Comment"),
+        content: const Text("Are you sure you want to delete this comment?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text("Cancel"),
+          ),
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(dialogContext);
+              try {
+                await ref
+                    .read(commentsControllerProvider.notifier)
+                    .deleteComment(
+                      commentId: comment.id,
+                      articleId: articleId,
+                      imageId: imageId,
+                      removedImages: comment.images,
+                    );
+
+                if (!context.mounted) return;
+                AppSnackBar.show(
+                  context,
+                  "Comment deleted successfully!\u{1F5D1}\uFE0F",
+                  type: SnackType.success,
+                );
+              } catch (_) {}
+            },
+            child: const Text("Delete", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -113,18 +158,12 @@ class CommentItem extends ConsumerWidget {
                             padding: EdgeInsets.zero,
                             icon: const Icon(Icons.more_vert, size: 18),
                             onSelected: (value) {
-                              if (value == 'edit'){
+                              if (isLoading) return;
+                              if (value == 'edit') {
                                 _openEditCommentPanel(context);
                               }
                               if (value == 'delete') {
-                                ref
-                                    .read(commentsControllerProvider.notifier)
-                                    .deleteComment(
-                                      commentId: comment.id,
-                                      articleId: articleId,
-                                      imageId: imageId,
-                                      removedImages: comment.images,
-                                    );
+                                _confirmDeleteComment(context, ref);
                               }
                             },
                             itemBuilder: (context) => const [

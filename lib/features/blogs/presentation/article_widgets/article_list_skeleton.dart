@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import '../../../../shared/widgets/loading/skeleton.dart';
 
-class CommentListSkeleton extends StatelessWidget {
+class ArticleListSkeleton extends StatelessWidget {
   final int itemCount;
 
-  const CommentListSkeleton({super.key, this.itemCount = 5});
+  const ArticleListSkeleton({super.key, this.itemCount = 4});
 
   @override
   Widget build(BuildContext context) {
@@ -12,21 +12,23 @@ class CommentListSkeleton extends StatelessWidget {
       child: ListView.separated(
         itemCount: itemCount,
         separatorBuilder: (context, index) => const SizedBox(height: 18),
-        itemBuilder: (context, index) => _CommentSkeletonItem(index: index),
+        itemBuilder: (context, index) => _ArticleSkeletonItem(index: index),
       ),
     );
   }
 }
 
-class _CommentSkeletonItem extends StatelessWidget {
+class _ArticleSkeletonItem extends StatelessWidget {
   final int index;
 
-  const _CommentSkeletonItem({required this.index});
+  const _ArticleSkeletonItem({required this.index});
 
   @override
   Widget build(BuildContext context) {
     final imageCount = index % 6; // visual estimate only (0..5)
-    final showEdited = index.isEven;
+    final contentLine1 = 210.0 + ((index % 3) * 16.0);
+    final contentLine2 = 180.0 + ((index % 2) * 24.0);
+    final contentLine3 = 150.0 + ((index % 3) * 14.0);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 9),
@@ -35,33 +37,40 @@ class _CommentSkeletonItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
+          const Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Expanded(child: SkeletonBox(height: 14, width: 130)),
-              if (showEdited) ...[
-                const SkeletonBox(height: 10, width: 38),
-                const SizedBox(width: 8),
-              ],
-              const SkeletonBox(width: 18, height: 18),
+              Expanded(child: SkeletonBox(height: 18)),
+              SizedBox(width: 12),
+              SkeletonBox(width: 18, height: 18),
             ],
           ),
+          const SizedBox(height: 10),
+          const SkeletonBox(height: 18, width: double.infinity),
+          const SizedBox(height: 6),
+          SkeletonBox(height: 12, width: contentLine1),
+          const SizedBox(height: 6),
+          SkeletonBox(height: 12, width: contentLine2),
+          const SizedBox(height: 6),
+          SkeletonBox(height: 12, width: contentLine3),
           if (imageCount > 0) ...[
             const SizedBox(height: 12),
-            _CommentImageSkeleton(imageCount: imageCount),
+            _ArticleImageSkeleton(imageCount: imageCount),
           ],
           const SizedBox(height: 10),
-          const SkeletonBox(height: 10, width: 70),
+          const SkeletonBox(height: 10, width: 190),
+          const SizedBox(height: 8),
+          const SkeletonBox(height: 42, width: double.infinity),
         ],
       ),
     );
   }
 }
 
-class _CommentImageSkeleton extends StatelessWidget {
+class _ArticleImageSkeleton extends StatelessWidget {
   final int imageCount;
 
-  const _CommentImageSkeleton({required this.imageCount});
+  const _ArticleImageSkeleton({required this.imageCount});
 
   @override
   Widget build(BuildContext context) {

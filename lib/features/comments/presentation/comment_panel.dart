@@ -4,10 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/comments_controller.dart';
 import '../../../core/enums/comment_context_type.dart';
 import 'comment_widgets/comment_list.dart';
-import 'comment_widgets/comment_list_skeleton.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../auth/state/auth_controller.dart';
 import '../../../shared/widgets/app_refresh.dart';
+import '../../../core/utils/app_snackbar.dart';
 
 class CommentPanel extends ConsumerStatefulWidget {
   final String articleId;
@@ -27,6 +27,7 @@ class CommentPanel extends ConsumerStatefulWidget {
 
 class _CommentPanelState extends ConsumerState<CommentPanel> {
   final TextEditingController _controller = TextEditingController();
+  final FocusNode _commentFocusNode = FocusNode();
   final List<File> _selectedImages = [];
 
   @override
@@ -42,7 +43,12 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
   @override
   void dispose() {
     _controller.dispose();
+    _commentFocusNode.dispose();
     super.dispose();
+  }
+
+  void _dismissKeyboard() {
+    FocusManager.instance.primaryFocus?.unfocus();
   }
 
   Future<void> _pickImages() async {
@@ -75,6 +81,13 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
 
       _controller.clear();
       setState(() => _selectedImages.clear());
+      _dismissKeyboard();
+      if (!mounted) return;
+      AppSnackBar.show(
+        context,
+        "Comment posted successfully!\u{1F4AC}",
+        type: SnackType.success,
+      );
     } catch (e) {
       debugPrint('ERROR POSTING COMMENT: $e');
     }
@@ -91,152 +104,166 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
     final commentsState = ref.watch(commentsControllerProvider);
     final authState = ref.watch(authControllerProvider); // AsyncValue<User?>
 
-    return commentsState.when(
-      loading: () => const CommentListSkeleton(),
-      error: (err, _) => Center(
-        child: Text(
-          'Failed to load comments',
-          style: const TextStyle(color: Colors.red),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: commentsState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(
+          child: Text(
+            'Failed to load comments',
+            style: const TextStyle(color: Colors.red),
+          ),
         ),
-      ),
-      data: (state) {
-        final isPosting = state.insertCommentLoading;
+        data: (state) {
+          final isPosting = state.insertCommentLoading;
 
-        final comments = widget.type == CommentContextType.comment
-            ? state.imageComments[widget.imageId] ?? []
-            : state.articleComments[widget.articleId] ?? [];
+          final comments = widget.type == CommentContextType.comment
+              ? state.imageComments[widget.imageId] ?? []
+              : state.articleComments[widget.articleId] ?? [];
 
-        return Column(
-          children: [
-            // comment list with pull-to-refresh
-            Expanded(
-              child: AppRefreshWrapper(
-                onRefresh: _refreshComments,
-                child: state.contentLoading
-                    ? const CommentListSkeleton()
-                    : (comments.isEmpty
-                          ? const Center(child: Text("No comments yet"))
-                          : CommentList(
-                              comments: comments,
-                              articleId: widget.articleId,
-                              imageId: widget.imageId,
-                            )),
-              ),
-            ),
-            // selected image previews
-            if (_selectedImages.isNotEmpty)
-              SizedBox(
-                height: 80,
-                child: ListView.separated(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _selectedImages.length,
-                  separatorBuilder: (context, index) =>
-                      const SizedBox(width: 8),
-                  itemBuilder: (context, i) => Stack(
-                    children: [
-                      Image.file(
-                        _selectedImages[i],
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                      ),
-                      Positioned(
-                        top: 0,
-                        right: 0,
-                        child: GestureDetector(
-                          onTap: () =>
-                              setState(() => _selectedImages.removeAt(i)),
-                          child: Container(
-                            color: Colors.black54,
-                            padding: const EdgeInsets.all(2),
-                            child: const Icon(
-                              Icons.close,
-                              size: 16,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+          return GestureDetector(
+            onTap: _dismissKeyboard,
+            behavior: HitTestBehavior.translucent,
+            child: Column(
+              children: [
+                // comment list with pull-to-refresh
+                Expanded(
+                  child: AppRefreshWrapper(
+                    onRefresh: _refreshComments,
+                    child: state.contentLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : (comments.isEmpty
+                              ? const Center(child: Text("No comments yet"))
+                              : CommentList(
+                                  comments: comments,
+                                  articleId: widget.articleId,
+                                  imageId: widget.imageId,
+                                )),
                   ),
                 ),
-              ),
-
-            // footer input
-            authState.when(
-              loading: () => const SizedBox(
-                height: 60,
-                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-              error: (e, st) => const SizedBox.shrink(),
-              data: (user) {
-                if (user == null) {
-                  return Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: const Border(top: BorderSide(color: Colors.grey)),
-                    ),
-                    child: const Text(
-                      "You must log in to post a comment.",
-                      style: TextStyle(color: Colors.grey),
-                    ),
-                  );
-                }
-
-                return Padding(
-                  padding: EdgeInsets.only(
-                    bottom: MediaQuery.of(context).viewInsets.bottom,
-                  ),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      border: const Border(top: BorderSide(color: Colors.grey)),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          color: Colors.black,
-                          onPressed: _pickImages,
-                          icon: const Icon(Icons.image),
-                        ),
-                        Expanded(
-                          child: TextField(
-                            controller: _controller,
-                            minLines: 1,
-                            maxLines: 5,
-                            decoration: const InputDecoration(
-                              hintText: "Write a comment...",
-                              border: InputBorder.none,
+                // selected image previews
+                if (_selectedImages.isNotEmpty)
+                  SizedBox(
+                    height: 80,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: _selectedImages.length,
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 8),
+                      itemBuilder: (context, i) => Stack(
+                        children: [
+                          Image.file(
+                            _selectedImages[i],
+                            width: 80,
+                            height: 80,
+                            fit: BoxFit.cover,
+                          ),
+                          Positioned(
+                            top: 0,
+                            right: 0,
+                            child: GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedImages.removeAt(i)),
+                              child: Container(
+                                color: Colors.black54,
+                                padding: const EdgeInsets.all(2),
+                                child: const Icon(
+                                  Icons.close,
+                                  size: 16,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                        IconButton(
-                          color: Colors.black,
-                          onPressed: isPosting ? null : _postComment,
-                          icon: isPosting
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                );
-              },
+
+                // footer input
+                authState.when(
+                  loading: () => const SizedBox(
+                    height: 60,
+                    child: Center(
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                  ),
+                  error: (e, st) => const SizedBox.shrink(),
+                  data: (user) {
+                    if (user == null) {
+                      return Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          border: const Border(
+                            top: BorderSide(color: Colors.grey),
+                          ),
+                        ),
+                        child: const Text(
+                          "You must log in to post a comment.",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      );
+                    }
+
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        border: const Border(
+                          top: BorderSide(color: Colors.grey),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          IconButton(
+                            color: Colors.black,
+                            onPressed: _pickImages,
+                            icon: const Icon(Icons.image),
+                          ),
+                          Expanded(
+                            child: TextField(
+                              controller: _controller,
+                              focusNode: _commentFocusNode,
+                              minLines: 1,
+                              maxLines: 5,
+                              decoration: const InputDecoration(
+                                hintText: "Write a comment...",
+                                border: InputBorder.none,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            color: Colors.black,
+                            onPressed: isPosting
+                                ? null
+                                : () {
+                                    _dismissKeyboard();
+                                    _postComment();
+                                  },
+                            icon: isPosting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.send),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ],
             ),
-          ],
-        );
-      },
+          );
+        },
+      ),
     );
   }
 }

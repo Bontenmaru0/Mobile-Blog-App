@@ -10,7 +10,8 @@ class CreateArticleScreen extends ConsumerStatefulWidget {
   const CreateArticleScreen({super.key});
 
   @override
-  ConsumerState<CreateArticleScreen> createState() => _CreateArticleScreenState();
+  ConsumerState<CreateArticleScreen> createState() =>
+      _CreateArticleScreenState();
 }
 
 class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
@@ -59,10 +60,6 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
             content: contentController.text.trim(),
             files: selectedImages,
           );
-
-      await ref
-          .read(blogsControllerProvider.notifier)
-          .fetchArticles(page: 1, limit: 5);
 
       if (!mounted) return;
 

@@ -5,6 +5,8 @@ import '../../profiles/state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
 import 'widgets/avatar_viewer.dart';
 import '../../../core/models/profile_model.dart';
+import '../../../shared/widgets/app_refresh.dart';
+import '../../../shared/widgets/loading/skeleton.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
   final String? userId; // null = current user, else public
@@ -57,6 +59,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     }
   }
 
+  Future<void> _refreshProfile() async {
+    if (widget.userId != null) {
+      await _fetchPublicProfile();
+      return;
+    }
+    ref.invalidate(profilesControllerProvider);
+    await ref.read(profilesControllerProvider.future);
+  }
+
   Future<void> _confirmLogout(BuildContext context) async {
     final shouldLogout = await showDialog<bool>(
       context: context,
@@ -102,15 +113,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
 
     // decide which profile to use
     final isPublic = widget.userId != null;
+    final isOwnerViewing = user != null && widget.userId == user.id;
+    final canEditProfile = !isPublic || isOwnerViewing;
 
     final profile = isPublic ? _publicProfile : profileState.asData?.value;
-    if (!isPublic && user != null && profile == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/create_profile_screen');
-      });
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
 
     // loading state
     if (isPublic && _isLoadingPublic) {
@@ -185,8 +191,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
         : "This ronin has not set up a bio yet. They are a mysterious warrior of the digital realm...";
 
     final avatarUrl = profile?.avatarUrl;
-    final fallbackLetter = (user?.email != null && user!.email!.isNotEmpty)
-        ? user.email!.substring(0, 1).toUpperCase()
+    final fallbackLetter = (fullName.isNotEmpty)
+        ? fullName.substring(0, 1).toUpperCase()
         : 'U';
 
     final showLogout = !isPublic; // hide logout on public profile
@@ -243,23 +249,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                     child: CircleAvatar(
                       radius: 55,
                       backgroundColor: Colors.black,
-                      child: CircleAvatar(
-                        radius: 52,
-                        backgroundColor: Colors.grey,
-                        backgroundImage:
-                            avatarUrl != null && avatarUrl.isNotEmpty
-                            ? NetworkImage(avatarUrl)
-                            : null,
-                        child: (avatarUrl == null || avatarUrl.isEmpty)
-                            ? Text(
-                                fallbackLetter,
-                                style: const TextStyle(
-                                  fontSize: 42,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black,
-                                ),
-                              )
-                            : null,
+                      child: ClipOval(
+                        child: SizedBox(
+                          width: 104,
+                          height: 104,
+                          child: avatarUrl != null && avatarUrl.isNotEmpty
+                              ? Image.network(
+                                  avatarUrl,
+                                  fit: BoxFit.cover,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+                                        return const _AvatarSkeleton();
+                                      },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return _AvatarFallback(
+                                      fallbackLetter: fallbackLetter,
+                                    );
+                                  },
+                                )
+                              : _AvatarFallback(fallbackLetter: fallbackLetter),
+                        ),
                       ),
                     ),
                   ),
@@ -295,10 +307,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                   ],
                 ),
                 const SizedBox(height: 20),
-                
-                  Row(
-                    children: [
-                    if (!isPublic)
+                Row(
+                  children: [
+                    if (canEditProfile)
                       Expanded(
                         child: OutlinedButton(
                           style: OutlinedButton.styleFrom(
@@ -315,23 +326,24 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
                           ),
                         ),
                       ),
+                    if (canEditProfile && user != null)
                       const SizedBox(width: 12),
-                      if (user != null)
-                        Expanded(
-                          child: OutlinedButton(
-                            style: OutlinedButton.styleFrom(
-                              side: const BorderSide(color: Colors.grey),
-                              shape: const RoundedRectangleBorder(),
-                            ),
-                            onPressed: () {},
-                            child: const Text(
-                              "Message",
-                              style: TextStyle(color: Colors.grey),
-                            ),
+                    if (user != null)
+                      Expanded(
+                        child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(color: Colors.grey),
+                            shape: const RoundedRectangleBorder(),
+                          ),
+                          onPressed: () {},
+                          child: const Text(
+                            "Message",
+                            style: TextStyle(color: Colors.grey),
                           ),
                         ),
-                    ],
-                  ),
+                      ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -350,9 +362,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
             ],
           ),
           Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [_buildPosts(), _buildActivity()],
+            child: AppRefreshWrapper(
+              onRefresh: _refreshProfile,
+              child: TabBarView(
+                controller: _tabController,
+                children: [_buildPosts(), _buildActivity()],
+              ),
             ),
           ),
         ],
@@ -361,6 +376,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
   }
 
   Widget _buildPosts() => ListView.builder(
+    physics: const AlwaysScrollableScrollPhysics(),
     itemCount: 5,
     itemBuilder: (context, index) => Container(
       margin: const EdgeInsets.all(12),
@@ -373,8 +389,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen>
     ),
   );
 
-  Widget _buildActivity() => const Center(
-    child: Text("Recent Activity...", style: TextStyle(color: Colors.black)),
+  Widget _buildActivity() => ListView(
+    physics: const AlwaysScrollableScrollPhysics(),
+    children: const [
+      SizedBox(height: 120),
+      Center(
+        child: Text(
+          "Recent Activity...",
+          style: TextStyle(color: Colors.black),
+        ),
+      ),
+    ],
   );
 }
 
@@ -398,5 +423,38 @@ class _StatItem extends StatelessWidget {
       const SizedBox(height: 4),
       Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
     ],
+  );
+}
+
+class _AvatarFallback extends StatelessWidget {
+  final String fallbackLetter;
+
+  const _AvatarFallback({required this.fallbackLetter});
+
+  @override
+  Widget build(BuildContext context) => Container(
+    color: Colors.grey,
+    alignment: Alignment.center,
+    child: Text(
+      fallbackLetter,
+      style: const TextStyle(
+        fontSize: 42,
+        fontWeight: FontWeight.bold,
+        color: Colors.black,
+      ),
+    ),
+  );
+}
+
+class _AvatarSkeleton extends StatelessWidget {
+  const _AvatarSkeleton();
+
+  @override
+  Widget build(BuildContext context) => const SkeletonShimmer(
+    child: SkeletonBox(
+      width: 104,
+      height: 104,
+      borderRadius: BorderRadius.all(Radius.circular(52)),
+    ),
   );
 }

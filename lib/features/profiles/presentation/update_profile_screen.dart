@@ -108,7 +108,7 @@ class _UpdateProfileScreenState
         type: SnackType.success,
       );
 
-      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
+      Navigator.pop(context);
     } catch (error) {
       setState(() {
         errorMessage = error.toString();

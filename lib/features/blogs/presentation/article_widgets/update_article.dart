@@ -87,10 +87,6 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
             removedImages: removedImages,
           );
 
-      await ref
-          .read(blogsControllerProvider.notifier)
-          .fetchArticles(page: 1, limit: 5);
-
       if (!mounted) return;
 
       AppSnackBar.show(
@@ -102,7 +98,7 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
       Navigator.pop(context);
     } catch (e) {
       setState(() {
-        errorMessage = "Article update failed.";
+        errorMessage = e.toString();
       });
     }
   }
@@ -218,6 +214,18 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
 
                 /// IMAGE PREVIEW
                 if (existingImages.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      "Current images (kept unless removed)",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
+                if (existingImages.isNotEmpty)
                   SizedBox(
                     height: 100,
                     child: ListView(
@@ -264,6 +272,21 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                     ),
                   ),
 
+                if (existingImages.isNotEmpty && selectedImages.isNotEmpty)
+                  const SizedBox(height: 10),
+
+                if (selectedImages.isNotEmpty)
+                  const Padding(
+                    padding: EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      "New images (to upload)",
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black54,
+                      ),
+                    ),
+                  ),
                 if (selectedImages.isNotEmpty)
                   SizedBox(
                     height: 100,

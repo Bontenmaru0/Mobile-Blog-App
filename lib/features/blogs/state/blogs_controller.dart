@@ -1,15 +1,17 @@
+import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/blogs_service.dart';
 import 'blogs_state.dart';
-import 'dart:io';
+import '../../../core/models/blog_model.dart';
+import '../../../core/models/image_model.dart';
 
 final blogsServiceProvider = Provider((ref) => BlogsService());
 
 final blogsControllerProvider =
     StateNotifierProvider<BlogsController, ArticlesState>((ref) {
-  final service = ref.read(blogsServiceProvider);
-  return BlogsController(service);
-});
+      final service = ref.read(blogsServiceProvider);
+      return BlogsController(service);
+    });
 
 class BlogsController extends StateNotifier<ArticlesState> {
   final BlogsService _service;
@@ -39,10 +41,7 @@ class BlogsController extends StateNotifier<ArticlesState> {
         total: total,
       );
     } catch (e) {
-      state = state.copyWith(
-        contentLoading: false,
-        blogError: e.toString(),
-      );
+      state = state.copyWith(contentLoading: false, blogError: e.toString());
     }
   }
 
@@ -72,6 +71,7 @@ class BlogsController extends StateNotifier<ArticlesState> {
         insertArticleLoading: false,
         insertArticleError: e.toString(),
       );
+      rethrow;
     }
   }
 
@@ -83,14 +83,34 @@ class BlogsController extends StateNotifier<ArticlesState> {
     required List<File> files,
     required List<String> removedImages,
   }) async {
-    final loadingMap = Map<String, bool>.from(
-        state.updateArticleLoadingById);
+    final current = state;
+    final loadingMap = Map<String, bool>.from(current.updateArticleLoadingById);
     loadingMap[id] = true;
 
-    state = state.copyWith(updateArticleLoadingById: loadingMap);
+    state = current.copyWith(
+      updateArticleLoadingById: loadingMap,
+      updateArticleError: null,
+      articles: current.articles.map((article) {
+        if (article.id != id) return article;
+
+        final filteredImages = article.images
+            .where((img) => !removedImages.contains(img.imageUrl))
+            .toList();
+
+        return ArticleModel(
+          id: article.id,
+          title: title,
+          content: content,
+          authorId: article.authorId,
+          images: filteredImages,
+          createdAt: article.createdAt,
+          fullName: article.fullName,
+        );
+      }).toList(),
+    );
 
     try {
-      final updated = await _service.updateArticle(
+      final result = await _service.updateArticle(
         articleId: id,
         title: title,
         content: content,
@@ -99,7 +119,32 @@ class BlogsController extends StateNotifier<ArticlesState> {
       );
 
       final updatedList = state.articles.map((a) {
-        return a.id == id ? updated : a;
+        if (a.id != id) return a;
+
+        if (result.article != null) {
+          return result.article!;
+        }
+
+        final existingUrls = a.images.map((img) => img.imageUrl).toSet();
+        final appended = result.newImageUrls
+            .where((url) => !existingUrls.contains(url))
+            .map(
+              (url) => ImageModel(
+                id: 'temp_${DateTime.now().microsecondsSinceEpoch}_${url.hashCode}',
+                imageUrl: url,
+              ),
+            )
+            .toList();
+
+        return ArticleModel(
+          id: a.id,
+          title: a.title,
+          content: a.content,
+          authorId: a.authorId,
+          images: [...a.images, ...appended],
+          createdAt: a.createdAt,
+          fullName: a.fullName,
+        );
       }).toList();
 
       loadingMap.remove(id);
@@ -111,10 +156,11 @@ class BlogsController extends StateNotifier<ArticlesState> {
     } catch (e) {
       loadingMap.remove(id);
 
-      state = state.copyWith(
+      state = current.copyWith(
         updateArticleLoadingById: loadingMap,
         updateArticleError: e.toString(),
       );
+      rethrow;
     }
   }
 
@@ -123,32 +169,32 @@ class BlogsController extends StateNotifier<ArticlesState> {
     required String id,
     required List<String> removedImages,
   }) async {
-    final loadingMap =
-        Map<String, bool>.from(state.deleteArticleLoadingById);
+    final current = state;
+    final loadingMap = Map<String, bool>.from(current.deleteArticleLoadingById);
     loadingMap[id] = true;
 
-    state = state.copyWith(deleteArticleLoadingById: loadingMap);
+    state = current.copyWith(
+      deleteArticleLoadingById: loadingMap,
+      deleteArticleError: null,
+    );
 
     try {
-      await _service.deleteArticle(
-        articleId: id,
-        removedImages: removedImages,
-      );
+      await _service.deleteArticle(articleId: id, removedImages: removedImages);
 
       loadingMap.remove(id);
 
       state = state.copyWith(
         deleteArticleLoadingById: loadingMap,
-        articles:
-            state.articles.where((a) => a.id != id).toList(),
+        articles: state.articles.where((a) => a.id != id).toList(),
       );
     } catch (e) {
       loadingMap.remove(id);
 
-      state = state.copyWith(
+      state = current.copyWith(
         deleteArticleLoadingById: loadingMap,
         deleteArticleError: e.toString(),
       );
+      rethrow;
     }
   }
 }
