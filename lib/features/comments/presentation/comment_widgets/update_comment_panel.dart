@@ -7,11 +7,15 @@ import '../../state/comments_controller.dart';
 
 class EditCommentPanel extends ConsumerStatefulWidget {
   final CommentModel comment;
+  final String articleId;
+  final String? imageId;
   final ScrollController scrollController;
 
   const EditCommentPanel({
     super.key,
     required this.comment,
+    required this.articleId,
+    this.imageId,
     required this.scrollController,
   });
 
@@ -64,14 +68,15 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
   }
 
   Future<void> submit() async {
-    await ref
-        .read(commentsControllerProvider.notifier)
-        .updateComment(
-          commentId: widget.comment.id,
-          content: _controller.text.trim(),
-          newFiles: selectedImages,
-          removedImages: removedImages,
-        );
+    final controller = ref.read(commentsControllerProvider.notifier);
+    await controller.updateComment(
+      commentId: widget.comment.id,
+      articleId: widget.articleId,
+      imageId: widget.imageId,
+      content: _controller.text.trim(),
+      newFiles: selectedImages,
+      removedImages: removedImages,
+    );
 
     if (!mounted) return;
     Navigator.pop(context);

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
-import '../../../features/comments/presentation/comment_widgets/comment_panel.dart';
+import '../../../features/comments/presentation/comment_panel.dart';
 import '../../../core/enums/comment_context_type.dart';
 
 class ImageGalleryPage extends StatefulWidget {

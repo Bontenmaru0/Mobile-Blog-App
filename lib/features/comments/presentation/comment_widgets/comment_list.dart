@@ -6,10 +6,14 @@ import 'comment_item.dart';
 
 class CommentList extends ConsumerWidget {
   final List<CommentModel> comments;
+  final String articleId;
+  final String? imageId;
 
   const CommentList({
     super.key,
     required this.comments,
+    required this.articleId,
+    this.imageId,
   });
 
   @override
@@ -33,8 +37,10 @@ class CommentList extends ConsumerWidget {
           children: [
             CommentItem(
               key: ValueKey(comment.id),
-              comment: comment
-              ),
+              comment: comment,
+              articleId: articleId,
+              imageId: imageId,
+            ),
             if (isDeleting || isUpdating)
               Positioned.fill(
                 child: Container(

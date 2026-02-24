@@ -1,20 +1,17 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../core/models/comment_model.dart';
 import '../data/comments_service.dart';
 import 'comments_state.dart';
+import 'comments_state_updater.dart';
 import 'dart:io';
 
 final commentsServiceProvider = Provider((ref) => CommentsService());
 
 final commentsControllerProvider =
     AsyncNotifierProvider<CommentsController, CommentsState>(
-  CommentsController.new,
-);
+      CommentsController.new,
+    );
 
 class CommentsController extends AsyncNotifier<CommentsState> {
-  String? _articleId;
-  String? _imageId;
-
   @override
   Future<CommentsState> build() async {
     return const CommentsState();
@@ -25,9 +22,6 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     required String articleId,
     String? imageId,
   }) async {
-    _articleId = articleId;
-    _imageId = imageId;
-
     final current = state.value ?? const CommentsState();
 
     state = AsyncData(
@@ -49,30 +43,21 @@ class CommentsController extends AsyncNotifier<CommentsState> {
       if (imageId != null) {
         state = AsyncData(
           latest.copyWith(
-            imageComments: {
-              ...latest.imageComments,
-              imageId: comments,
-            },
+            imageComments: {...latest.imageComments, imageId: comments},
             contentLoading: false,
           ),
         );
       } else {
         state = AsyncData(
           latest.copyWith(
-            articleComments: {
-              ...latest.articleComments,
-              articleId: comments,
-            },
+            articleComments: {...latest.articleComments, articleId: comments},
             contentLoading: false,
           ),
         );
       }
     } catch (e) {
       state = AsyncData(
-        current.copyWith(
-          contentLoading: false,
-          contentError: e.toString(),
-        ),
+        current.copyWith(contentLoading: false, contentError: e.toString()),
       );
     }
   }
@@ -89,10 +74,7 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     final service = ref.read(commentsServiceProvider);
 
     state = AsyncData(
-      current.copyWith(
-        insertCommentLoading: true,
-        insertCommentError: null,
-      ),
+      current.copyWith(insertCommentLoading: true, insertCommentError: null),
     );
 
     try {
@@ -144,6 +126,8 @@ class CommentsController extends AsyncNotifier<CommentsState> {
   // update
   Future<void> updateComment({
     required String commentId,
+    required String articleId,
+    String? imageId,
     String? content,
     required List<File> newFiles,
     required List<String> removedImages,
@@ -161,52 +145,60 @@ class CommentsController extends AsyncNotifier<CommentsState> {
       ),
     );
 
+    final afterLoading = state.value ?? current;
+    final existing = CommentsStateUpdater.findCommentById(afterLoading, commentId);
+    if (existing != null) {
+      state = AsyncData(
+        CommentsStateUpdater.replaceCommentById(
+          afterLoading,
+          commentId,
+          CommentsStateUpdater.buildOptimisticUpdatedComment(
+            existing: existing,
+            submittedContent: content,
+            removedImages: removedImages,
+          ),
+        ),
+      );
+    }
+
     try {
       final updatedComment = await service.updateComment(
         commentId: commentId,
         content: content,
         newFiles: newFiles,
         removedImages: removedImages,
+        articleId: articleId,
+        imageId: imageId,
       );
 
       final latest = state.value ?? current;
+      final latestExisting = CommentsStateUpdater.findCommentById(
+        latest,
+        commentId,
+      );
+      final merged = latestExisting != null
+          ? CommentsStateUpdater.mergeUpdatedComment(
+              existing: latestExisting,
+              server: updatedComment,
+              submittedContent: content,
+              removedImages: removedImages,
+            )
+          : updatedComment;
 
-      final updatedList = _getCurrentList(latest)
-          .map((c) => c.id == commentId ? updatedComment : c)
-          .toList();
-
-      if (_imageId != null) {
-        state = AsyncData(
-          latest.copyWith(
-            imageComments: {
-              ...latest.imageComments,
-              _imageId!: updatedList,
-            },
-            updateCommentLoadingById: {
-              ...latest.updateCommentLoadingById,
-              commentId: false,
-            },
-          ),
-        );
-      } else {
-        state = AsyncData(
-          latest.copyWith(
-            articleComments: {
-              ...latest.articleComments,
-              _articleId!: updatedList,
-            },
-            updateCommentLoadingById: {
-              ...latest.updateCommentLoadingById,
-              commentId: false,
-            },
-          ),
-        );
-      }
-    } catch (e) {
       state = AsyncData(
-        current.copyWith(
+        CommentsStateUpdater.replaceCommentById(latest, commentId, merged).copyWith(
           updateCommentLoadingById: {
-            ...current.updateCommentLoadingById,
+            ...latest.updateCommentLoadingById,
+            commentId: false,
+          },
+        ),
+      );
+    } catch (e) {
+      final latest = state.value ?? current;
+      state = AsyncData(
+        latest.copyWith(
+          updateCommentLoadingById: {
+            ...latest.updateCommentLoadingById,
             commentId: false,
           },
           updateCommentError: e.toString(),
@@ -218,6 +210,8 @@ class CommentsController extends AsyncNotifier<CommentsState> {
   // delete
   Future<void> deleteComment({
     required String commentId,
+    required String articleId,
+    String? imageId,
     required List<String> removedImages,
   }) async {
     final current = state.value ?? const CommentsState();
@@ -239,38 +233,14 @@ class CommentsController extends AsyncNotifier<CommentsState> {
       );
 
       final latest = state.value ?? current;
-
-      final updatedList = _getCurrentList(latest)
-          .where((c) => c.id != commentId)
-          .toList();
-
-      if (_imageId != null) {
-        state = AsyncData(
-          latest.copyWith(
-            imageComments: {
-              ...latest.imageComments,
-              _imageId!: updatedList,
-            },
-            deleteCommentLoadingById: {
-              ...latest.deleteCommentLoadingById,
-              commentId: false,
-            },
-          ),
-        );
-      } else {
-        state = AsyncData(
-          latest.copyWith(
-            articleComments: {
-              ...latest.articleComments,
-              _articleId!: updatedList,
-            },
-            deleteCommentLoadingById: {
-              ...latest.deleteCommentLoadingById,
-              commentId: false,
-            },
-          ),
-        );
-      }
+      state = AsyncData(
+        CommentsStateUpdater.removeCommentById(latest, commentId).copyWith(
+          deleteCommentLoadingById: {
+            ...latest.deleteCommentLoadingById,
+            commentId: false,
+          },
+        ),
+      );
     } catch (e) {
       state = AsyncData(
         current.copyWith(
@@ -282,13 +252,5 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         ),
       );
     }
-  }
-
-  // helper getting current state/list
-  List<CommentModel> _getCurrentList(CommentsState current) {
-    if (_imageId != null) {
-      return current.imageComments[_imageId!] ?? [];
-    }
-    return current.articleComments[_articleId!] ?? [];
   }
 }

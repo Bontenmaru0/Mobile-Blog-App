@@ -10,7 +10,7 @@ import '../../../shared/widgets/image/image_gallery_page.dart';
 import 'article_widgets/create_article.dart';
 import 'article_widgets/update_article.dart';
 import '../../../shared/widgets/app_refresh.dart';
-import '../../comments/presentation/comment_widgets/comment_panel.dart';
+import '../../comments/presentation/comment_panel.dart';
 import '../../../core/enums/comment_context_type.dart';
 import '../../../features/profiles/presentation/widgets/profile_link.dart';
 

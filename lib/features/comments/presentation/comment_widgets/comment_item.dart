@@ -10,8 +10,15 @@ import '../../../auth/state/auth_controller.dart';
 
 class CommentItem extends ConsumerWidget {
   final CommentModel comment;
+  final String articleId;
+  final String? imageId;
 
-  const CommentItem({super.key, required this.comment});
+  const CommentItem({
+    super.key,
+    required this.comment,
+    required this.articleId,
+    this.imageId,
+  });
 
   void _openEditCommentPanel(BuildContext context) {
     showModalBottomSheet(
@@ -30,6 +37,8 @@ class CommentItem extends ConsumerWidget {
           builder: (context, scrollController) {
             return EditCommentPanel(
               comment: comment,
+              articleId: articleId,
+              imageId: imageId,
               scrollController: scrollController,
             );
           },
@@ -112,6 +121,8 @@ class CommentItem extends ConsumerWidget {
                                     .read(commentsControllerProvider.notifier)
                                     .deleteComment(
                                       commentId: comment.id,
+                                      articleId: articleId,
+                                      imageId: imageId,
                                       removedImages: comment.images,
                                     );
                               }

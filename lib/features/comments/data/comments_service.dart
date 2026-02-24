@@ -100,6 +100,7 @@ class CommentsService {
     required List<String> removedImages,
     String status = 'edited',
     String? articleId,
+    String? imageId,
   }) async {
     try {
       List<String> newUploadedUrls = [];
@@ -142,13 +143,27 @@ class CommentsService {
 
       print("Update RPC response: $response");
 
+      // RPC response shape for update can be partial. Re-fetch using normal
+      // read endpoints to get a full comment payload compatible with model parsing.
+      if (articleId != null) {
+        final refreshed = imageId != null
+            ? await fetchImageComments(articleId: articleId, imageId: imageId)
+            : await fetchArticleComments(articleId: articleId);
+
+        try {
+          return refreshed.firstWhere((c) => c.id == commentId);
+        } catch (_) {
+          // Fall back to parsing RPC payload if the comment is not found.
+        }
+      }
+
       if (response is List && response.isNotEmpty) {
         return CommentModel.fromJson(Map<String, dynamic>.from(response[0]));
-      } else if (response is Map) {
-        return CommentModel.fromJson(Map<String, dynamic>.from(response));
-      } else {
-        throw Exception('Unexpected RPC response format');
       }
+      if (response is Map) {
+        return CommentModel.fromJson(Map<String, dynamic>.from(response));
+      }
+      throw Exception('Unexpected RPC response format');
     } catch (e, stack) {
       print("UPDATE ||||||||||| UPDATE COMMENT ERROR: $e");
       print(stack);

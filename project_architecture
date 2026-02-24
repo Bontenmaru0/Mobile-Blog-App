@@ -1,35 +1,46 @@
 lib/
-├── main.dart                  # Entry point
-├── app.dart                   # App widget + theme + routing
-├── core/
-│   ├── constants/             # App-wide constants
-│   ├── utils/                 # Helper functions (date formatters, validators)
-│   ├── services/              # External services (Supabase client, storage, API)
-│   └── models/                # Data models (User, Post, Comment)
-├── features/                  # Split by feature
-│   ├── auth/
-│   │   ├── data/              # Supabase queries
-│   │   │   └── auth_service.dart
-│   │   ├── presentation/      # Screens + Widgets
-│   │   │   ├── login_screen.dart
-│   │   │   └── signup_screen.dart
-│   │   └── state/             # Riverpod/Provider state
-│   │       └── auth_controller.dart
-│   ├── blogs/
+├── main.dart                  # App entry point (runs `App`)
+├── app.dart                   # App widget + theme, routing, top-level providers
+├── core/                      # Cross-cutting code
+│   ├── constants/             # App-wide constants (keys, route names)
+│   ├── enums/                 # Shared enums
+│   ├── models/                # Data models (User, Post, Comment, CommentModel)
+│   ├── services/              # External services (Supabase client, storage, API adapters)
+│   └── utils/                 # Helpers (formatters, validators, image helpers)
+├── features/                  # Feature modules (vertical slices)
+│   ├── auth/                  # Authentication flows
+│   │   ├── data/              # API / Supabase queries (e.g. auth_service.dart)
+│   │   ├── presentation/      # Screens & widgets (login/signup)
+│   │   └── state/             # Riverpod state (e.g. auth_controller.dart)
+│   ├── blogs/                 # Blog listing, detail, creation
+│   │   ├── data/
+│   │   ├── presentation/
+│   │   │   └── widgets/
+│   │   └── state/             # Blog controllers/providers
+│   ├── profiles/              # User profiles
 │   │   ├── data/
 │   │   ├── presentation/
 │   │   │   └── widgets/
 │   │   └── state/
-│   ├── profiles/
-│   │   ├── data/
-│   │   ├── presentation/
-│   │   │   └── widgets/
-│   │   └── state/
-│   └── comments/
-│       ├── data/
-│       ├── presentation/
+│   └── comments/              # Comment system (article & image comments)
+│       ├── data/              # comments_service.dart (fetch/create/update/delete)
+│       ├── presentation/      # Comment UI + composable widgets
 │       │   └── widgets/
-│       └── state/
+│       └── state/             # comments_controller.dart, comments_state.dart (Riverpod AsyncNotifier)
 └── shared/
-    ├── widgets/               # Reusable widgets (buttons, cards)
-    └── theme/                 # Colors, typography
+    ├── theme/                 # Colors, typography, theme definitions
+    └── widgets/               # Reusable UI (buttons, cards)
+
+platforms/                     # Platform-specific folders (android/ ios/ web/ windows/ linux/ macos)
+test/                          # Unit & widget tests
+
+Notes:
+- State management: Riverpod with AsyncNotifier/AsyncNotifierProvider is used across features.
+- Services: `core/services` contains Supabase client adapters, storage helpers, and API wrappers.
+- Comments feature supports two contexts: article-level and image-level. The controller uses maps keyed by id to store lists for each article or image and keeps the currently-active `articleId` / `imageId` when operating.
+- File layout is vertical-by-feature: each feature groups `data`, `presentation`, and `state` to keep concerns localized and easier to test.
+
+Quick references:
+- comments controller: `lib/features/comments/state/comments_controller.dart`
+- comments service: `lib/features/comments/data/comments_service.dart`
+- auth service: `lib/features/auth/data/auth_service.dart`
