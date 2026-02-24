@@ -99,10 +99,7 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
   Widget build(BuildContext context) {
     final state = ref.watch(commentsControllerProvider);
 
-    final isLoading = state.maybeWhen(
-      data: (data) => data.updateCommentLoadingById[widget.comment.id] ?? false,
-      orElse: () => false,
-    );
+    final isLoading = state.updateCommentLoadingById[widget.comment.id] ?? false;
 
     return Container(
       padding: const EdgeInsets.all(16),

@@ -397,10 +397,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Expanded(
                           child: blogState.contentLoading
                               ? const Center(child: CircularProgressIndicator())
-                              : blogState.blogError != null
+                              : blogState.contentError != null
                               ? Center(
                                   child: Text(
-                                    blogState.blogError!,
+                                    blogState.contentError!,
                                     style: const TextStyle(color: Colors.red),
                                   ),
                                 )

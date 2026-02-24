@@ -97,8 +97,8 @@ class CommentItem extends ConsumerWidget {
     final state = ref.watch(commentsControllerProvider);
     final isEdited = comment.status == 'edited';
     final isLoading =
-        state.value?.updateCommentLoadingById[comment.id] == true ||
-        state.value?.deleteCommentLoadingById[comment.id] == true;
+        state.updateCommentLoadingById[comment.id] == true ||
+        state.deleteCommentLoadingById[comment.id] == true;
 
     return Stack(
       children: [

@@ -7,13 +7,14 @@ import 'dart:io';
 final commentsServiceProvider = Provider((ref) => CommentsService());
 
 final commentsControllerProvider =
-    AsyncNotifierProvider<CommentsController, CommentsState>(
-      CommentsController.new,
-    );
+    NotifierProvider<CommentsController, CommentsState>(CommentsController.new);
 
-class CommentsController extends AsyncNotifier<CommentsState> {
+class CommentsController extends Notifier<CommentsState> {
+  late final CommentsService _service;
+
   @override
-  Future<CommentsState> build() async {
+  CommentsState build() {
+    _service = ref.read(commentsServiceProvider);
     return const CommentsState();
   }
 
@@ -22,44 +23,33 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     required String articleId,
     String? imageId,
   }) async {
-    final current = state.value ?? const CommentsState();
-
-    state = AsyncData(
-      current.copyWith(contentLoading: true, contentError: null),
-    );
+    final current = state;
+    state = current.copyWith(contentLoading: true, contentError: null);
 
     try {
-      final service = ref.read(commentsServiceProvider);
-
       final comments = imageId != null
-          ? await service.fetchImageComments(
+          ? await _service.fetchImageComments(
               articleId: articleId,
               imageId: imageId,
             )
-          : await service.fetchArticleComments(articleId: articleId);
+          : await _service.fetchArticleComments(articleId: articleId);
 
-      final latest = state.value ?? current;
+      final latest = state;
 
       if (imageId != null) {
-        state = AsyncData(
-          latest.copyWith(
-            imageComments: {...latest.imageComments, imageId: comments},
-            contentLoading: false,
-          ),
+        state = latest.copyWith(
+          imageComments: {...latest.imageComments, imageId: comments},
+          contentLoading: false,
         );
       } else {
-        state = AsyncData(
-          latest.copyWith(
-            articleComments: {...latest.articleComments, articleId: comments},
-            contentLoading: false,
-          ),
+        state = latest.copyWith(
+          articleComments: {...latest.articleComments, articleId: comments},
+          contentLoading: false,
         );
       }
     } catch (e) {
-      final latest = state.value ?? current;
-      state = AsyncData(
-        latest.copyWith(contentLoading: false, contentError: e.toString()),
-      );
+      final latest = state;
+      state = latest.copyWith(contentLoading: false, contentError: e.toString());
     }
   }
 
@@ -71,15 +61,11 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     String? parentId,
     required List<File> files,
   }) async {
-    final current = state.value ?? const CommentsState();
-    final service = ref.read(commentsServiceProvider);
-
-    state = AsyncData(
-      current.copyWith(insertCommentLoading: true, insertCommentError: null),
-    );
+    final current = state;
+    state = current.copyWith(insertCommentLoading: true, insertCommentError: null);
 
     try {
-      final newComment = await service.createComment(
+      final newComment = await _service.createComment(
         articleId: articleId,
         content: content,
         imageId: imageId,
@@ -87,40 +73,34 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         files: files,
       );
 
-      final latest = state.value ?? current;
+      final latest = state;
 
       if (imageId != null) {
         final existing = latest.imageComments[imageId] ?? [];
 
-        state = AsyncData(
-          latest.copyWith(
-            imageComments: {
-              ...latest.imageComments,
-              imageId: [newComment, ...existing],
-            },
-            insertCommentLoading: false,
-          ),
+        state = latest.copyWith(
+          imageComments: {
+            ...latest.imageComments,
+            imageId: [newComment, ...existing],
+          },
+          insertCommentLoading: false,
         );
       } else {
         final existing = latest.articleComments[articleId] ?? [];
 
-        state = AsyncData(
-          latest.copyWith(
-            articleComments: {
-              ...latest.articleComments,
-              articleId: [newComment, ...existing],
-            },
-            insertCommentLoading: false,
-          ),
+        state = latest.copyWith(
+          articleComments: {
+            ...latest.articleComments,
+            articleId: [newComment, ...existing],
+          },
+          insertCommentLoading: false,
         );
       }
     } catch (e) {
-      final latest = state.value ?? current;
-      state = AsyncData(
-        latest.copyWith(
-          insertCommentLoading: false,
-          insertCommentError: e.toString(),
-        ),
+      final latest = state;
+      state = latest.copyWith(
+        insertCommentLoading: false,
+        insertCommentError: e.toString(),
       );
     }
   }
@@ -134,38 +114,32 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     required List<File> newFiles,
     required List<String> removedImages,
   }) async {
-    final current = state.value ?? const CommentsState();
-    final service = ref.read(commentsServiceProvider);
-
-    state = AsyncData(
-      current.copyWith(
-        updateCommentLoadingById: {
-          ...current.updateCommentLoadingById,
-          commentId: true,
-        },
-        updateCommentError: null,
-      ),
+    final current = state;
+    state = current.copyWith(
+      updateCommentLoadingById: {
+        ...current.updateCommentLoadingById,
+        commentId: true,
+      },
+      updateCommentError: null,
     );
 
-    final afterLoading = state.value ?? current;
+    final afterLoading = state;
     final existing = CommentsStateUpdater.findCommentById(afterLoading, commentId);
     final originalSnapshot = existing;
     if (existing != null) {
-      state = AsyncData(
-        CommentsStateUpdater.replaceCommentById(
-          afterLoading,
-          commentId,
-          CommentsStateUpdater.buildOptimisticUpdatedComment(
-            existing: existing,
-            submittedContent: content,
-            removedImages: removedImages,
-          ),
+      state = CommentsStateUpdater.replaceCommentById(
+        afterLoading,
+        commentId,
+        CommentsStateUpdater.buildOptimisticUpdatedComment(
+          existing: existing,
+          submittedContent: content,
+          removedImages: removedImages,
         ),
       );
     }
 
     try {
-      final updatedComment = await service.updateComment(
+      final updatedComment = await _service.updateComment(
         commentId: commentId,
         content: content,
         newFiles: newFiles,
@@ -174,7 +148,7 @@ class CommentsController extends AsyncNotifier<CommentsState> {
         imageId: imageId,
       );
 
-      final latest = state.value ?? current;
+      final latest = state;
       final latestExisting = CommentsStateUpdater.findCommentById(
         latest,
         commentId,
@@ -188,16 +162,14 @@ class CommentsController extends AsyncNotifier<CommentsState> {
             )
           : updatedComment;
 
-      state = AsyncData(
-        CommentsStateUpdater.replaceCommentById(latest, commentId, merged).copyWith(
-          updateCommentLoadingById: {
-            ...latest.updateCommentLoadingById,
-            commentId: false,
-          },
-        ),
+      state = CommentsStateUpdater.replaceCommentById(latest, commentId, merged).copyWith(
+        updateCommentLoadingById: {
+          ...latest.updateCommentLoadingById,
+          commentId: false,
+        },
       );
     } catch (e) {
-      final latest = state.value ?? current;
+      final latest = state;
       final reverted = originalSnapshot != null
           ? CommentsStateUpdater.replaceCommentById(
               latest,
@@ -205,14 +177,12 @@ class CommentsController extends AsyncNotifier<CommentsState> {
               originalSnapshot,
             )
           : latest;
-      state = AsyncData(
-        reverted.copyWith(
-          updateCommentLoadingById: {
-            ...reverted.updateCommentLoadingById,
-            commentId: false,
-          },
-          updateCommentError: e.toString(),
-        ),
+      state = reverted.copyWith(
+        updateCommentLoadingById: {
+          ...reverted.updateCommentLoadingById,
+          commentId: false,
+        },
+        updateCommentError: e.toString(),
       );
       rethrow;
     }
@@ -225,43 +195,35 @@ class CommentsController extends AsyncNotifier<CommentsState> {
     String? imageId,
     required List<String> removedImages,
   }) async {
-    final current = state.value ?? const CommentsState();
-    final service = ref.read(commentsServiceProvider);
-
-    state = AsyncData(
-      current.copyWith(
-        deleteCommentLoadingById: {
-          ...current.deleteCommentLoadingById,
-          commentId: true,
-        },
-      ),
+    final current = state;
+    state = current.copyWith(
+      deleteCommentLoadingById: {
+        ...current.deleteCommentLoadingById,
+        commentId: true,
+      },
     );
 
     try {
-      await service.deleteComment(
+      await _service.deleteComment(
         commentId: commentId,
         removedImages: removedImages,
       );
 
-      final latest = state.value ?? current;
-      state = AsyncData(
-        CommentsStateUpdater.removeCommentById(latest, commentId).copyWith(
-          deleteCommentLoadingById: {
-            ...latest.deleteCommentLoadingById,
-            commentId: false,
-          },
-        ),
+      final latest = state;
+      state = CommentsStateUpdater.removeCommentById(latest, commentId).copyWith(
+        deleteCommentLoadingById: {
+          ...latest.deleteCommentLoadingById,
+          commentId: false,
+        },
       );
     } catch (e) {
-      final latest = state.value ?? current;
-      state = AsyncData(
-        latest.copyWith(
-          deleteCommentLoadingById: {
-            ...latest.deleteCommentLoadingById,
-            commentId: false,
-          },
-          deleteCommentError: e.toString(),
-        ),
+      final latest = state;
+      state = latest.copyWith(
+        deleteCommentLoadingById: {
+          ...latest.deleteCommentLoadingById,
+          commentId: false,
+        },
+        deleteCommentError: e.toString(),
       );
       rethrow;
     }

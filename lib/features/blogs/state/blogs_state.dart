@@ -5,7 +5,7 @@ class ArticlesState {
   final List<ArticleModel> articles;
   final int total;
   final bool contentLoading;
-  final String? blogError;
+  final String? contentError;
 
   final bool insertArticleLoading;
   final String? insertArticleError;
@@ -21,7 +21,7 @@ class ArticlesState {
     this.articles = const [],
     this.total = 0,
     this.contentLoading = false,
-    this.blogError,
+    this.contentError,
     this.insertArticleLoading = false,
     this.insertArticleError,
     this.updateArticleLoadingById = const {},
@@ -35,7 +35,7 @@ class ArticlesState {
     List<ArticleModel>? articles,
     int? total,
     bool? contentLoading,
-    String? blogError,
+    String? contentError,
     bool? insertArticleLoading,
     String? insertArticleError,
     Map<String, bool>? updateArticleLoadingById,
@@ -47,7 +47,7 @@ class ArticlesState {
       articles: articles ?? this.articles,
       total: total ?? this.total,
       contentLoading: contentLoading ?? this.contentLoading,
-      blogError: blogError,
+      contentError: contentError,
       insertArticleLoading:
           insertArticleLoading ?? this.insertArticleLoading,
       insertArticleError: insertArticleError,

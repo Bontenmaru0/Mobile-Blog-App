@@ -8,15 +8,16 @@ import '../../../core/models/image_model.dart';
 final blogsServiceProvider = Provider((ref) => BlogsService());
 
 final blogsControllerProvider =
-    StateNotifierProvider<BlogsController, ArticlesState>((ref) {
-      final service = ref.read(blogsServiceProvider);
-      return BlogsController(service);
-    });
+    NotifierProvider<BlogsController, ArticlesState>(BlogsController.new);
 
-class BlogsController extends StateNotifier<ArticlesState> {
-  final BlogsService _service;
+class BlogsController extends Notifier<ArticlesState> {
+  late final BlogsService _service;
 
-  BlogsController(this._service) : super(const ArticlesState());
+  @override
+  ArticlesState build() {
+    _service = ref.read(blogsServiceProvider);
+    return const ArticlesState();
+  }
 
   // fetch
   Future<void> fetchArticles({
@@ -26,7 +27,7 @@ class BlogsController extends StateNotifier<ArticlesState> {
     bool onlyMine = false,
   }) async {
     try {
-      state = state.copyWith(contentLoading: true, blogError: null);
+      state = state.copyWith(contentLoading: true, contentError: null);
 
       final (articles, total) = await _service.fetchBlogs(
         limit: limit,
@@ -41,7 +42,7 @@ class BlogsController extends StateNotifier<ArticlesState> {
         total: total,
       );
     } catch (e) {
-      state = state.copyWith(contentLoading: false, blogError: e.toString());
+      state = state.copyWith(contentLoading: false, contentError: e.toString());
     }
   }
 
