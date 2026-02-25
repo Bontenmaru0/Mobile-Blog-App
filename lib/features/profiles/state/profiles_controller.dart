@@ -1,8 +1,8 @@
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/profiles_service.dart';
 import '../../../core/models/profile_model.dart';
 import '../../auth/state/auth_controller.dart';
+import '../../../core/models/upload_file.dart';
 
 final profilesServiceProvider = Provider((ref) {
   return ProfilesService();
@@ -50,7 +50,7 @@ class ProfilesController extends AsyncNotifier<Profile?> {
     required String fullName,
     required String nickName,
     required String bio,
-    File? avatarFile,
+    UploadFile? avatarFile,
   }) async {
     state = const AsyncLoading();
 
@@ -76,7 +76,7 @@ class ProfilesController extends AsyncNotifier<Profile?> {
     required String fullName,
     required String nickName,
     required String bio,
-    File? avatarFile,
+    UploadFile? avatarFile,
     bool deleteOldAvatar = false,
   }) async {
     state = const AsyncLoading();

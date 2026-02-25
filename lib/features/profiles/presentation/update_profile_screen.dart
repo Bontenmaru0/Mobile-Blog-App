@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../auth/state/auth_controller.dart';
 import '../state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/models/upload_file.dart';
 
 class UpdateProfileScreen extends ConsumerStatefulWidget {
   const UpdateProfileScreen({super.key});
@@ -26,7 +26,7 @@ class _UpdateProfileScreenState
  
   final ImagePicker _picker = ImagePicker();
   String? originalAvatarUrl; // DB avatar URL
-  File? selectedImage;        // new picked file
+  UploadFile? selectedImage; // new picked file
   bool isAvatarRemoved = false; // tracks if user removed avatar
 
 
@@ -56,8 +56,9 @@ class _UpdateProfileScreenState
         await _picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        selectedImage = File(image.path);
+        selectedImage = UploadFile(name: image.name, bytes: bytes);
         isAvatarRemoved = false;
       });
     }
@@ -234,7 +235,7 @@ class _UpdateProfileScreenState
                             radius: 50,
                             backgroundColor: Colors.grey[300],
                             backgroundImage: selectedImage != null
-                                ? FileImage(selectedImage!)
+                                ? MemoryImage(selectedImage!.bytes)
                                 : (!isAvatarRemoved && originalAvatarUrl != null && originalAvatarUrl!.isNotEmpty)
                                     ? NetworkImage(originalAvatarUrl!)
                                     : null,

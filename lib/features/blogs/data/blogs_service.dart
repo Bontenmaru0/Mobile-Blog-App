@@ -1,8 +1,9 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import '../../../core/services/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/models/blog_model.dart';
+import '../../../core/models/upload_file.dart';
 
 class ArticleUpdateResult {
   final ArticleModel? article;
@@ -16,6 +17,7 @@ class ArticleUpdateResult {
 
 class BlogsService {
   final SupabaseClient _supabase = SupabaseService.client;
+  final Uuid _uuid = const Uuid();
 
   //fetch
   Future<(List<ArticleModel>, int)> fetchBlogs({
@@ -48,7 +50,7 @@ class BlogsService {
   Future<void> createArticle({
     required String title,
     required String content,
-    required List<File> files,
+    required List<UploadFile> files,
   }) async {
     final user = _supabase.auth.currentUser;
     if (user == null) {
@@ -58,11 +60,12 @@ class BlogsService {
     List<String> uploadedUrls = [];
 
     for (final file in files) {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      final fileName = '${_uuid.v4()}-${file.name}';
       final path = 'articles/$fileName';
 
-      await _supabase.storage.from('article_images').upload(path, file);
+      await _supabase.storage
+          .from('article_images')
+          .uploadBinary(path, file.bytes);
 
       final publicUrl = _supabase.storage
           .from('article_images')
@@ -87,18 +90,19 @@ class BlogsService {
     required String articleId,
     required String title,
     required String content,
-    required List<File> files,
+    required List<UploadFile> files,
     required List<String> removedImages,
   }) async {
     List<String> newUploadedUrls = [];
 
     // upload new images
     for (final file in files) {
-      final fileName =
-          '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+      final fileName = '${_uuid.v4()}-${file.name}';
       final path = 'articles/$articleId/$fileName';
 
-      await _supabase.storage.from('article_images').upload(path, file);
+      await _supabase.storage
+          .from('article_images')
+          .uploadBinary(path, file.bytes);
 
       final publicUrl = _supabase.storage
           .from('article_images')

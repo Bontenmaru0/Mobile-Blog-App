@@ -1,11 +1,13 @@
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 import '../../../core/services/supabase_client.dart';
 import '../../../core/models/comment_model.dart';
+import '../../../core/models/upload_file.dart';
 
 class CommentsService {
   final SupabaseClient _supabase = SupabaseService.client;
+  final Uuid _uuid = const Uuid();
 
   // fetch article comments
   Future<List<CommentModel>> fetchArticleComments({
@@ -51,7 +53,7 @@ class CommentsService {
     String? content,
     String? imageId,
     String? parentId,
-    required List<File> files,
+    required List<UploadFile> files,
   }) async {
     try {
       final user = _supabase.auth.currentUser;
@@ -61,11 +63,12 @@ class CommentsService {
 
       // upload multiple images
       for (final file in files) {
-        final fileName =
-            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final fileName = '${_uuid.v4()}-${file.name}';
         final path = 'comments/$fileName';
 
-        await _supabase.storage.from('comment_images').upload(path, file);
+        await _supabase.storage
+            .from('comment_images')
+            .uploadBinary(path, file.bytes);
         final publicUrl = _supabase.storage.from('comment_images').getPublicUrl(path);
         uploadedUrls.add(publicUrl);
       }
@@ -97,7 +100,7 @@ class CommentsService {
   Future<CommentModel> updateComment({
     required String commentId,
     String? content,
-    required List<File> newFiles,
+    required List<UploadFile> newFiles,
     required List<String> removedImages,
     String status = 'edited',
     String? articleId,
@@ -108,11 +111,12 @@ class CommentsService {
 
       // Upload new images
       for (final file in newFiles) {
-        final fileName =
-            '${DateTime.now().millisecondsSinceEpoch}_${file.path.split('/').last}';
+        final fileName = '${_uuid.v4()}-${file.name}';
         final path = 'comments/$commentId/$fileName';
 
-        await _supabase.storage.from('comment_images').upload(path, file);
+        await _supabase.storage
+            .from('comment_images')
+            .uploadBinary(path, file.bytes);
         final publicUrl = _supabase.storage.from('comment_images').getPublicUrl(path);
         newUploadedUrls.add(publicUrl);
       }

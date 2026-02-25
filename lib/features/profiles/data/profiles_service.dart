@@ -1,7 +1,7 @@
-import 'dart:io';
 import '../../../core/services/supabase_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
+import '../../../core/models/upload_file.dart';
 
 class ProfilesService {
   final SupabaseClient _supabase = SupabaseService.client;
@@ -38,17 +38,17 @@ class ProfilesService {
     required String fullName,
     required String nickname,
     required String bio,
-    File? avatarFile,
+    UploadFile? avatarFile,
   }) async {
     String? avatarUrl;
 
     if (avatarFile != null) {
-      final fileName = '${_uuid.v4()}-${avatarFile.path.split('/').last}';
+      final fileName = '${_uuid.v4()}-${avatarFile.name}';
       final filePath = 'avatars/$fileName';
 
       await _supabase.storage
           .from('profile_images')
-          .uploadBinary(filePath, await avatarFile.readAsBytes());
+          .uploadBinary(filePath, avatarFile.bytes);
 
       avatarUrl = _supabase.storage
           .from('profile_images')
@@ -75,7 +75,7 @@ class ProfilesService {
     required String fullName,
     required String nickname,
     required String bio,
-    File? avatarFile,
+    UploadFile? avatarFile,
     bool deleteOldAvatar = false,
   }) async {
     String? avatarUrl;
@@ -99,12 +99,12 @@ class ProfilesService {
 
     // upload new avatar if provided
     if (avatarFile != null) {
-      final fileName = '${_uuid.v4()}-${avatarFile.path.split('/').last}';
+      final fileName = '${_uuid.v4()}-${avatarFile.name}';
       final filePath = 'avatars/$fileName';
 
       await _supabase.storage
           .from('profile_images')
-          .uploadBinary(filePath, await avatarFile.readAsBytes());
+          .uploadBinary(filePath, avatarFile.bytes);
 
       avatarUrl = _supabase.storage
           .from('profile_images')

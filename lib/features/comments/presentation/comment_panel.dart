@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../state/comments_controller.dart';
@@ -8,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../auth/state/auth_controller.dart';
 import '../../../shared/widgets/app_refresh.dart';
 import '../../../core/utils/app_snackbar.dart';
+import '../../../core/models/upload_file.dart';
 
 class CommentPanel extends ConsumerStatefulWidget {
   final String articleId;
@@ -28,7 +28,7 @@ class CommentPanel extends ConsumerStatefulWidget {
 class _CommentPanelState extends ConsumerState<CommentPanel> {
   final TextEditingController _controller = TextEditingController();
   final FocusNode _commentFocusNode = FocusNode();
-  final List<File> _selectedImages = [];
+  final List<UploadFile> _selectedImages = [];
 
   @override
   void initState() {
@@ -55,8 +55,14 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
     final picker = ImagePicker();
     final pickedFiles = await picker.pickMultiImage();
     if (pickedFiles.isNotEmpty) {
+      final picked = <UploadFile>[];
+      for (final pickedFile in pickedFiles) {
+        picked.add(
+          UploadFile(name: pickedFile.name, bytes: await pickedFile.readAsBytes()),
+        );
+      }
       setState(() {
-        _selectedImages.addAll(pickedFiles.map((e) => File(e.path)));
+        _selectedImages.addAll(picked);
       });
     }
   }
@@ -140,11 +146,12 @@ class _CommentPanelState extends ConsumerState<CommentPanel> {
                   separatorBuilder: (context, index) => const SizedBox(width: 8),
                   itemBuilder: (context, i) => Stack(
                     children: [
-                      Image.file(
-                        _selectedImages[i],
+                      Image.memory(
+                        _selectedImages[i].bytes,
                         width: 80,
                         height: 80,
                         fit: BoxFit.cover,
+                        gaplessPlayback: true,
                       ),
                       Positioned(
                         top: 0,

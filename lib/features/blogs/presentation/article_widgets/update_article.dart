@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
@@ -7,6 +6,7 @@ import '../../../profiles/state/profiles_controller.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../../../core/models/blog_model.dart';
 import '../../../../core/models/image_model.dart';
+import '../../../../core/models/upload_file.dart';
 
 class UpdateArticleScreen extends ConsumerStatefulWidget {
   final ArticleModel article;
@@ -25,7 +25,7 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
   String? errorMessage;
 
   final ImagePicker _picker = ImagePicker();
-  List<File> selectedImages = [];
+  List<UploadFile> selectedImages = [];
 
   List<ImageModel> existingImages = [];
   List<String> removedImages = [];
@@ -43,8 +43,12 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
     final images = await _picker.pickMultiImage();
 
     if (images.isNotEmpty) {
+      final picked = <UploadFile>[];
+      for (final image in images) {
+        picked.add(UploadFile(name: image.name, bytes: await image.readAsBytes()));
+      }
       setState(() {
-        selectedImages.addAll(images.map((e) => File(e.path)));
+        selectedImages.addAll(picked);
       });
     }
   }
@@ -290,18 +294,22 @@ class _UpdateArticleScreenState extends ConsumerState<UpdateArticleScreen> {
                 if (selectedImages.isNotEmpty)
                   SizedBox(
                     height: 100,
-                    child: ListView(
-                      scrollDirection: Axis.horizontal,
-                      children: selectedImages.map((file) {
-                        return Stack(
-                          key: ValueKey(file.path),
-                          children: [
-                            Container(
-                              margin: const EdgeInsets.only(right: 8),
-                              width: 100,
-                              height: 100,
-                              child: Image.file(file, fit: BoxFit.cover),
-                            ),
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: selectedImages.map((file) {
+                          return Stack(
+                            key: ValueKey('${file.name}-${file.bytes.length}'),
+                            children: [
+                              Container(
+                                margin: const EdgeInsets.only(right: 8),
+                                width: 100,
+                                height: 100,
+                                child: Image.memory(
+                                  file.bytes,
+                                  fit: BoxFit.cover,
+                                  gaplessPlayback: true,
+                                ),
+                              ),
                             Positioned(
                               right: 8,
                               top: 4,

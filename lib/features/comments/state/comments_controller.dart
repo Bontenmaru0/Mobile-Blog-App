@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/comments_service.dart';
 import 'comments_state.dart';
 import 'comments_state_updater.dart';
-import 'dart:io';
+import '../../../core/models/upload_file.dart';
 
 final commentsServiceProvider = Provider((ref) => CommentsService());
 
@@ -59,7 +59,7 @@ class CommentsController extends Notifier<CommentsState> {
     String? imageId,
     String? content,
     String? parentId,
-    required List<File> files,
+    required List<UploadFile> files,
   }) async {
     final current = state;
     state = current.copyWith(insertCommentLoading: true, insertCommentError: null);
@@ -111,7 +111,7 @@ class CommentsController extends Notifier<CommentsState> {
     required String articleId,
     String? imageId,
     String? content,
-    required List<File> newFiles,
+    required List<UploadFile> newFiles,
     required List<String> removedImages,
   }) async {
     final current = state;

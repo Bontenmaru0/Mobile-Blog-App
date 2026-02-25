@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/models/comment_model.dart';
 import '../../../../core/utils/app_snackbar.dart';
 import '../../state/comments_controller.dart';
+import '../../../../core/models/upload_file.dart';
 
 class EditCommentPanel extends ConsumerStatefulWidget {
   final CommentModel comment;
@@ -31,7 +31,7 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
 
   final ImagePicker _picker = ImagePicker();
 
-  List<File> selectedImages = [];
+  List<UploadFile> selectedImages = [];
   List<String> existingImages = [];
   List<String> removedImages = [];
 
@@ -51,13 +51,17 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
   Future<void> pickImages() async {
     final images = await _picker.pickMultiImage();
     if (images.isNotEmpty) {
+      final picked = <UploadFile>[];
+      for (final image in images) {
+        picked.add(UploadFile(name: image.name, bytes: await image.readAsBytes()));
+      }
       setState(() {
-        selectedImages.addAll(images.map((e) => File(e.path)));
+        selectedImages.addAll(picked);
       });
     }
   }
 
-  void removeNewImage(File file) {
+  void removeNewImage(UploadFile file) {
     setState(() {
       selectedImages.remove(file);
     });
@@ -239,13 +243,17 @@ class _EditCommentPanelState extends ConsumerState<EditCommentPanel> {
                         scrollDirection: Axis.horizontal,
                         children: selectedImages.map((file) {
                           return Stack(
-                            key: ValueKey(file.path),
+                            key: ValueKey('${file.name}-${file.bytes.length}'),
                             children: [
                               Container(
                                 margin: const EdgeInsets.only(right: 8),
                                 width: 100,
                                 height: 100,
-                                child: Image.file(file, fit: BoxFit.cover),
+                                child: Image.memory(
+                                  file.bytes,
+                                  fit: BoxFit.cover,
+                                  gaplessPlayback: true,
+                                ),
                               ),
                               Positioned(
                                 right: 8,

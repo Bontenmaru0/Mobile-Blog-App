@@ -1,10 +1,10 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../state/blogs_controller.dart';
 import '../../../profiles/state/profiles_controller.dart';
 import '../../../../core/utils/app_snackbar.dart';
+import '../../../../core/models/upload_file.dart';
 
 class CreateArticleScreen extends ConsumerStatefulWidget {
   const CreateArticleScreen({super.key});
@@ -21,14 +21,18 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
   String? errorMessage;
 
   final ImagePicker _picker = ImagePicker();
-  List<File> selectedImages = [];
+  List<UploadFile> selectedImages = [];
 
   Future<void> pickImages() async {
     final images = await _picker.pickMultiImage();
 
     if (images.isNotEmpty) {
+      final picked = <UploadFile>[];
+      for (final image in images) {
+        picked.add(UploadFile(name: image.name, bytes: await image.readAsBytes()));
+      }
       setState(() {
-        selectedImages.addAll(images.map((e) => File(e.path)));
+        selectedImages.addAll(picked);
       });
     }
   }
@@ -199,8 +203,9 @@ class _CreateArticleScreenState extends ConsumerState<CreateArticleScreen> {
                               margin: const EdgeInsets.only(right: 8),
                               width: 100,
                               height: 100,
-                              child: Image.file(
-                                selectedImages[index],
+                              child: Image.memory(
+                                selectedImages[index].bytes,
+                                gaplessPlayback: true,
                                 fit: BoxFit.cover,
                               ),
                             ),

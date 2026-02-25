@@ -357,9 +357,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              "Recent Posts",
-                              style: TextStyle(
+                            Text(
+                              page > 1 ? "Older Posts" : "Recent Posts",
+                              style: const TextStyle(
                                 fontSize: 22,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -470,8 +470,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
                                                         ),
                                                       ),
 
-                                                      // 3 dots menu
-                                                      if (user != null)
+                                                      // 3 dots menu (owner only)
+                                                      if (user?.id == article.authorId)
                                                         PopupMenuButton<String>(
                                                           icon: const Icon(
                                                             Icons.more_vert,

@@ -1,9 +1,9 @@
-import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/blogs_service.dart';
 import 'blogs_state.dart';
 import '../../../core/models/blog_model.dart';
 import '../../../core/models/image_model.dart';
+import '../../../core/models/upload_file.dart';
 
 final blogsServiceProvider = Provider((ref) => BlogsService());
 
@@ -50,7 +50,7 @@ class BlogsController extends Notifier<ArticlesState> {
   Future<void> createArticle({
     required String title,
     required String content,
-    required List<File> files,
+    required List<UploadFile> files,
   }) async {
     try {
       state = state.copyWith(
@@ -81,7 +81,7 @@ class BlogsController extends Notifier<ArticlesState> {
     required String id,
     required String title,
     required String content,
-    required List<File> files,
+    required List<UploadFile> files,
     required List<String> removedImages,
   }) async {
     final current = state;

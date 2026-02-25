@@ -4,8 +4,8 @@ import '../../auth/state/auth_controller.dart';
 import '../state/profiles_controller.dart';
 import '../../../core/utils/app_snackbar.dart';
 import '../../../shared/widgets/nav_user_menu.dart';
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../../../core/models/upload_file.dart';
 
 class CreateProfileScreen extends ConsumerStatefulWidget {
   const CreateProfileScreen({super.key});
@@ -34,7 +34,7 @@ class _CreateProfileScreenState
   String? avatarPath;
 
   final ImagePicker _picker = ImagePicker();
-  File? selectedImage;
+  UploadFile? selectedImage;
 
   @override
   void dispose() {
@@ -49,8 +49,9 @@ class _CreateProfileScreenState
         await _picker.pickImage(source: ImageSource.gallery);
 
     if (image != null) {
+      final bytes = await image.readAsBytes();
       setState(() {
-        selectedImage = File(image.path);
+        selectedImage = UploadFile(name: image.name, bytes: bytes);
         avatarPath = image.path;
       });
     }
@@ -178,7 +179,7 @@ class _CreateProfileScreenState
                             radius: 50,
                             backgroundColor: Colors.grey[300],
                             backgroundImage: selectedImage != null
-                                ? FileImage(selectedImage!)
+                                ? MemoryImage(selectedImage!.bytes)
                                 : null,
                             child: selectedImage == null
                                 ? const Icon(
