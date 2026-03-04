@@ -1,4 +1,5 @@
 import 'package:blog_app/features/profiles/presentation/create_profile_screen.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:blog_app/shared/theme/app_theme.dart';
 import 'features/auth/presentation/login_screen.dart';
@@ -25,6 +26,15 @@ class _AppView extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Modern Samurai',
       theme: AppTheme.lightTheme,
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.stylus,
+          PointerDeviceKind.invertedStylus,
+          PointerDeviceKind.unknown,
+        },
+      ),
       initialRoute: '/',
       onGenerateRoute: (settings) {
         switch (settings.name) {
